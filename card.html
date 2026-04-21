@@ -107,22 +107,49 @@
     }
 
     window.onload = async () => {
-        await liff.init({ liffId: "2009859584-THwDZKBN" });
-        if (!liff.isLoggedIn()) { liff.login(); }
+    try {
+        // 1. LIFFの初期化
+        await liff.init({ liffId: "2009859584-THwDZKBN" }); // あなたの新しいID
+        
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+        }
+
         const profile = await liff.getProfile();
 
-        // ステータス取得
-        const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}`);
+        // 2. GASからステータスを取得
+        // タイムアウト対策として5秒で切り上げる設定を追加
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}`, {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
         const status = await res.json();
         
-        document.getElementById('user-level').innerText = status.lv;
-        document.getElementById('user-title').innerText = status.title;
-        const currentExp = status.totalExp % 100; // 100ごとに1Lv
+        // 3. 画面への反映
+        document.getElementById('user-level').innerText = status.lv || "1";
+        document.getElementById('user-title').innerText = status.title || "冒険者";
+        const currentExp = (status.totalExp || 0) % 100;
         document.getElementById('exp-bar').style.width = currentExp + "%";
         document.getElementById('exp-next').innerText = 100 - currentExp;
 
+    } catch (e) {
+        // エラーが起きた場合はアラートを出し、画面を強制表示する
+        console.error(e);
+        alert("通信エラーが発生しました。設定を確認してください。\nエラー内容: " + e.message);
+        
+        // 仮の値を表示して、ボタンだけは触れるようにする
+        document.getElementById('user-level').innerText = "?";
+        document.getElementById('user-title').innerText = "通信エラー";
+    } finally {
+        // 成功しても失敗しても、読み込み画面は必ず消す
         document.getElementById('loading-overlay').style.display = 'none';
-    };
+    }
+};
 </script>
 </body>
 </html>
