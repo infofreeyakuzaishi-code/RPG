@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ろぎてむ・クエスト</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a202c; margin: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 20px; color: #fff; }
+        .card { background: #2d3748; width: 92%; max-width: 420px; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; position: relative; padding-bottom: 30px; border: 2px solid #4a5568; }
+        
+        /* RPG風ヘッダー */
+        .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); color: white; padding: 25px 20px; text-align: center; border-bottom: 3px solid #ed64a6; }
+        .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        
+        /* ステータスエリア */
+        .status-box { background: rgba(0,0,0,0.2); margin: 15px 20px; padding: 15px; border-radius: 15px; border: 1px solid #4a5568; }
+        .user-info { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+        .level-badge { background: #ed64a6; padding: 2px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .title-text { font-size: 13px; color: #cbd5e0; }
+        
+        /* 経験値ゲージ */
+        .exp-bar-container { background: #1a202c; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #4a5568; }
+        .exp-bar-fill { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1s ease-out; }
+
+        .section-title { font-size: 11px; font-weight: bold; color: #a0aec0; margin: 25px 20px 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* スタンプボタン */
+        .stamp-grid { display: flex; justify-content: space-around; padding: 0 20px; gap: 10px; }
+        .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 16px; flex: 1; padding: 12px 0; font-size: 26px; cursor: pointer; transition: 0.2s; }
+        .stamp-btn:active { transform: scale(1.2) rotate(5deg); background: #4a5568; }
+
+        .vital-btn { width: calc(100% - 40px); margin: 15px 20px; padding: 16px; border-radius: 16px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(237, 100, 166, 0.3); }
+
+        /* メニューグリッド */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; }
+        .menu-item { background: #3d4957; border: 1px solid #4a5568; border-radius: 20px; padding: 20px 10px; text-align: center; cursor: pointer; }
+        .menu-item:active { border-color: #ed64a6; transform: translateY(2px); }
+        .icon { font-size: 28px; margin-bottom: 8px; }
+        .label { font-size: 14px; font-weight: bold; color: #e2e8f0; }
+
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 100; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="loader">⚔️ 読み込み中...</div>
+    <div class="header">
+        <h1>ROGITEM QUEST</h1>
+    </div>
+
+    <div class="status-box">
+        <div class="user-info">
+            <span class="title-text" id="user-title">見習い冒険者</span>
+            <span class="level-badge">Lv.<span id="user-level">1</span></span>
+        </div>
+        <div class="exp-bar-container">
+            <div id="exp-fill" class="exp-bar-fill"></div>
+        </div>
+        <div style="font-size: 10px; color: #a0aec0; text-align: right; margin-top: 4px;">
+            NEXT: <span id="exp-next">---</span> EXP
+        </div>
+    </div>
+
+    <div class="section-title">今の気分（宿屋で休息）</div>
+    <div class="stamp-grid">
+        <button class="stamp-btn" onclick="sendRPG('stamp', '😊')">😊</button>
+        <button class="stamp-btn" onclick="sendRPG('stamp', '😑')">😑</button>
+        <button class="stamp-btn" onclick="sendRPG('stamp', '😫')">😫</button>
+        <button class="stamp-btn" onclick="sendRPG('stamp', '🤒')">🤒</button>
+    </div>
+
+    <button class="vital-btn" onclick="location.href='rpg_vital.html'">
+        ⚔️ 身体データ入力（ステータス更新）
+    </button>
+
+    <div class="section-title">ポーション（サプリ・服薬）</div>
+    <div class="menu-grid" id="grid">
+        <div class="menu-item">
+            <div class="icon">💊</div>
+            <div class="label">読み込み中...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ★新しいRPG版GASのURLに書き換えてください★
+    const RPG_GAS_URL = "ここに新しいGASのURLをペースト"; 
+    const LIFF_URL = "https://liff.line.me/2009771327-tpjaCzG9";
+
+    async function sendRPG(type, val) {
+        // LINEへのメッセージ送信処理などをここに記載
+        window.location.href = `https://line.me/R/oaMessage/@534uoyka/?${encodeURIComponent(val + ' を記録した！')}`;
+    }
+
+    window.onload = async () => {
+        const id = new URLSearchParams(window.location.search).get('item') || "lg-vw7k7t";
+        try {
+            const res = await fetch(`${RPG_GAS_URL}?type=getStatus&item=${id}`);
+            const data = await res.json();
+            
+            // ステータス反映
+            document.getElementById('user-level').innerText = data.lv;
+            document.getElementById('user-title').innerText = data.title;
+            
+            // 経験値ゲージ計算 (100EXPごとに1Lvの例)
+            const currentLevelExp = data.totalExp % 100;
+            document.getElementById('exp-fill').style.width = `${currentLevelExp}%`;
+            document.getElementById('exp-next').innerText = 100 - currentLevelExp;
+
+            // ボタン生成ロジック（シンプル版を継承しつつデザイン調整）
+            // ... (省略) ...
+            
+        } finally { document.getElementById('loader').style.display = "none"; }
+    };
+</script>
+</body>
+</html>
