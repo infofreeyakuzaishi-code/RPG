@@ -6,87 +6,152 @@
     <title>ろぎてむ・クエスト</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        /* スタイルは先ほど提示した「かっこいいデザイン」を全維持 */
-        body { font-family: sans-serif; background-color: #1a202c; margin: 0; padding: 20px 0; color: #fff; }
-        .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; border: 2px solid #4a5568; padding-bottom: 30px; }
-        .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 30px 20px; text-align: center; }
-        .status-box { background: rgba(0,0,0,0.3); margin: 20px; padding: 18px; border-radius: 20px; }
-        .level-badge { background: #ed64a6; padding: 4px 12px; border-radius: 20px; font-weight: bold; }
-        .exp-bar { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1s; }
-        .exp-container { background: #1a202c; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 10px; }
-        .label-group { font-size: 12px; color: #a0aec0; margin: 20px; font-weight: bold; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a202c; margin: 0; padding: 20px 0; color: #fff; -webkit-tap-highlight-color: transparent; }
+        .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); overflow: hidden; border: 2px solid #4a5568; padding-bottom: 30px; }
+        .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #ed64a6; }
+        .header h1 { margin: 0; font-size: 22px; letter-spacing: 3px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-weight: 900; }
+        .status-box { background: rgba(0,0,0,0.3); margin: 20px; padding: 18px; border-radius: 20px; border: 1px solid #4a5568; }
+        .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .level-badge { background: #ed64a6; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 0 10px rgba(237,100,166,0.5); }
+        .title-text { font-size: 14px; color: #a0aec0; font-weight: bold; }
+        .exp-container { position: relative; background: #1a202c; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #4a5568; }
+        .exp-bar { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        .label-group { font-size: 11px; font-weight: bold; color: #718096; margin: 25px 20px 10px; letter-spacing: 2px; }
+        .stamp-grid { display: flex; justify-content: space-around; padding: 0 15px; gap: 10px; }
+        .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; transition: 0.2s; outline: none; }
+        .stamp-btn:active { transform: scale(1.2); background: #4fd1c5; }
         .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
-        .potion-item { background: #3d4957; border-radius: 20px; padding: 20px; text-align: center; cursor: pointer; }
-        .stamp-grid { display: flex; justify-content: space-around; padding: 0 20px; gap: 10px; }
-        .stamp-btn { background: #3d4957; border: none; border-radius: 15px; flex: 1; padding: 15px; font-size: 24px; color: white; }
-        .quest-btn { width: calc(100% - 40px); margin: 20px; padding: 18px; border-radius: 18px; border: none; background: #ed64a6; color: white; font-weight: bold; }
-        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a202c; z-index:100; display:flex; justify-content:center; align-items:center; }
+        .potion-item { background: linear-gradient(145deg, #3d4957, #2d3748); border: 1px solid #4a5568; border-radius: 20px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .potion-item:active { border-color: #ed64a6; background: #4a5568; transform: translateY(3px); }
+        .potion-icon { font-size: 32px; margin-bottom: 8px; }
+        .potion-label { font-size: 13px; font-weight: bold; color: #e2e8f0; }
+        .quest-btn { width: calc(100% - 40px); margin: 25px 20px 0; padding: 18px; border-radius: 18px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4); outline: none; }
+        
+        /* 演出用オーバーレイ */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.5s; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #ed64a6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-<div id="loading">読み込み中...</div>
+
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text" style="letter-spacing: 3px; font-weight: bold;">冒険の準備中...</div>
+</div>
+
 <div class="card">
     <div class="header"><h1>ROGITEM QUEST</h1></div>
     <div class="status-box">
-        <div style="display:flex; justify-content:space-between;">
-            <span id="user-title">...</span>
+        <div class="user-info">
+            <span class="title-text" id="user-title">ロード中...</span>
             <span class="level-badge">Lv.<span id="user-level">-</span></span>
         </div>
         <div class="exp-container"><div id="exp-bar" class="exp-bar"></div></div>
     </div>
-    <div class="label-group">今の気分</div>
+
+    <div class="label-group">今の気分（宿屋で休息）</div>
     <div class="stamp-grid">
         <button class="stamp-btn" onclick="sendAction('stamp', '😊')">😊</button>
         <button class="stamp-btn" onclick="sendAction('stamp', '😑')">😑</button>
         <button class="stamp-btn" onclick="sendAction('stamp', '😫')">😫</button>
+        <button class="stamp-btn" onclick="sendAction('stamp', '🤒')">🤒</button>
     </div>
-    <div class="label-group">ポーション</div>
-    <div id="potion-grid" class="potion-grid"></div>
-    <button class="quest-btn" onclick="location.href='vital.html'+window.location.search">⚔️ 身体データ入力</button>
+
+    <div class="label-group">ポーション（サプリ・服薬）</div>
+    <div id="potion-grid" class="potion-grid">
+        </div>
+
+    <button class="quest-btn" onclick="location.href='vital.html'+window.location.search">⚔️ 身体データ入力（探索）</button>
 </div>
 
 <script>
+    // ★重要★ GASのデプロイURLに書き換えてください
     const RPG_GAS_URL = "https://script.google.com/macros/s/AKfycbwSVPNQZ60INpvWiKWnDjyx_78sclB1LF1rco0U0X0p-04hDnDXU7sphUqPxAczqtdm/exec";
     const LIFF_ID = "2009859584-THwDZKBN";
 
     window.onload = async () => {
-        await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()) { liff.login(); return; }
-        const profile = await liff.getProfile();
-        const item = new URLSearchParams(window.location.search).get('item') || "default";
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            
+            const profile = await liff.getProfile();
+            const item = new URLSearchParams(window.location.search).get('item') || "default";
 
-        const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}&item=${item}`);
-        const data = await res.json();
+            // ステータスとボタン名の取得
+            const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}&item=${item}`);
+            const data = await res.json();
 
-        document.getElementById('user-level').innerText = data.lv;
-        document.getElementById('user-title').innerText = data.title;
-        document.getElementById('exp-bar').style.width = (data.totalExp % 100) + "%";
+            // ステータス反映
+            document.getElementById('user-level').innerText = data.lv;
+            document.getElementById('user-title').innerText = data.title;
+            setTimeout(() => {
+                document.getElementById('exp-bar').style.width = (data.totalExp % 100) + "%";
+            }, 100);
 
-        const grid = document.getElementById('potion-grid');
-        data.buttons.forEach(btn => {
-            const div = document.createElement('div');
-            div.className = 'potion-item';
-            div.onclick = () => sendAction('supply', btn.name);
-            div.innerHTML = `<div>🧪</div><div style="font-size:12px;">${btn.name}</div>`;
-            grid.appendChild(div);
-        });
-        document.getElementById('loading').style.display = 'none';
+            // ボタン生成
+            const grid = document.getElementById('potion-grid');
+            grid.innerHTML = '';
+            data.buttons.forEach(btn => {
+                const div = document.createElement('div');
+                div.className = 'potion-item';
+                div.onclick = () => sendAction('supply', btn.name);
+                div.innerHTML = `<div class="potion-icon">🧪</div><div class="potion-label">${btn.name}</div>`;
+                grid.appendChild(div);
+            });
+
+            // 準備完了：フェードアウト
+            const loader = document.getElementById('loading-overlay');
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 500);
+
+        } catch (e) {
+            console.error(e);
+            document.getElementById('loading-text').innerText = "通信エラー：再読み込みしてください";
+        }
     };
 
     async function sendAction(type, name) {
-        const profile = await liff.getProfile();
-        // GASへ送信
-        await fetch(RPG_GAS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify({ type: type, userId: profile.userId, displayName: profile.displayName, name: name })
-        });
-        // LINE送信
-        if (liff.isInClient()) {
-            await liff.sendMessages([{ type: 'text', text: `【クエスト記録】\n${name} を使用しました！` }]);
+        // 送信中演出を表示
+        const loader = document.getElementById('loading-overlay');
+        const text = document.getElementById('loading-text');
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        text.innerText = "ギルドへ報告中...";
+
+        try {
+            const profile = await liff.getProfile();
+            
+            // GASへデータ送信
+            // ※GAS側でメッセージ送信を行うため、フロント側では送信完了を待つだけ
+            await fetch(RPG_GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ 
+                    type: type, 
+                    userId: profile.userId, 
+                    displayName: profile.displayName, 
+                    name: name 
+                })
+            });
+
+            text.innerText = "記録完了！";
+            
+            // 1.5秒間「完了」を見せてから画面を閉じる（または非表示にする）
+            setTimeout(() => {
+                if (liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    loader.style.opacity = '0';
+                    setTimeout(() => { loader.style.display = 'none'; }, 500);
+                }
+            }, 1500);
+
+        } catch (e) {
+            console.error(e);
+            alert("報告に失敗しました。電波の良いところで再度お試しください。");
+            loader.style.display = 'none';
         }
-        alert(name + " を記録しました！");
-        liff.closeWindow();
     }
 </script>
 </body>
