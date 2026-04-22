@@ -8,38 +8,24 @@
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a202c; margin: 0; padding: 20px 0; color: #fff; }
         .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); overflow: hidden; border: 2px solid #4a5568; padding-bottom: 30px; }
-        
-        /* ヘッダー演出 */
         .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #ed64a6; }
         .header h1 { margin: 0; font-size: 22px; letter-spacing: 3px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-weight: 900; }
-        
-        /* ステータス画面 */
         .status-box { background: rgba(0,0,0,0.3); margin: 20px; padding: 18px; border-radius: 20px; border: 1px solid #4a5568; }
         .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .level-badge { background: #ed64a6; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 0 10px rgba(237,100,166,0.5); }
         .title-text { font-size: 14px; color: #a0aec0; font-weight: bold; }
-        
-        /* 経験値ゲージ */
         .exp-container { position: relative; background: #1a202c; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #4a5568; }
         .exp-bar { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
-
         .label-group { font-size: 11px; font-weight: bold; color: #718096; margin: 25px 20px 10px; letter-spacing: 2px; }
-        
-        /* 宿屋ボタン（スタンプ） */
         .stamp-grid { display: flex; justify-content: space-around; padding: 0 15px; gap: 10px; }
         .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; transition: 0.2s; }
         .stamp-btn:active { transform: scale(1.3); background: #4fd1c5; }
-
-        /* 4つのポーションボタン */
         .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
         .potion-item { background: linear-gradient(145deg, #3d4957, #2d3748); border: 1px solid #4a5568; border-radius: 20px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
         .potion-item:active { border-color: #ed64a6; background: #4a5568; transform: translateY(3px); }
         .potion-icon { font-size: 32px; margin-bottom: 8px; }
         .potion-label { font-size: 13px; font-weight: bold; color: #e2e8f0; }
-
-        /* 身体データへの導線 */
         .quest-btn { width: calc(100% - 40px); margin: 25px 20px 0; padding: 18px; border-radius: 18px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4); }
-
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
@@ -52,14 +38,12 @@
 
 <div class="card">
     <div class="header"><h1>ROGITEM QUEST</h1></div>
-
     <div class="status-box">
         <div class="user-info">
-            <span class="title-text" id="user-title">ロード中...</span>
+            <span class="title-text" id="user-title">...</span>
             <span class="level-badge">Lv.<span id="user-level">-</span></span>
         </div>
         <div class="exp-container"><div id="exp-bar" class="exp-bar"></div></div>
-        <div style="font-size: 10px; color: #718096; text-align: right; margin-top: 6px;">NEXT: <span id="exp-next">-</span> EXP</div>
     </div>
 
     <div class="label-group">今の気分（宿屋で休息）</div>
@@ -71,85 +55,80 @@
     </div>
 
     <div class="label-group">ポーション（サプリ・服薬）</div>
-    <div class="potion-grid">
-        <div class="potion-item" onclick="sendAction('supply', 'サプリA')"><div class="potion-icon">🧪</div><div class="potion-label">サプリA</div></div>
-        <div class="potion-item" onclick="sendAction('supply', 'サプリB')"><div class="potion-icon">🧪</div><div class="potion-label">サプリB</div></div>
-        <div class="potion-item" onclick="sendAction('supply', 'サプリC')"><div class="potion-icon">🧪</div><div class="potion-label">サプリC</div></div>
-        <div class="potion-item" onclick="sendAction('supply', 'サプリD')"><div class="potion-icon">🧪</div><div class="potion-label">サプリD</div></div>
-    </div>
+    <div id="potion-grid" class="potion-grid">
+        </div>
 
-    <button class="quest-btn" onclick="location.href='rpg_vital.html'">
-        ⚔️ 身体データ入力（探索）
-    </button>
+    <button class="quest-btn" onclick="goToVital()">⚔️ 身体データ入力（探索）</button>
 </div>
 
 <script>
-    // ★新しいRPG版GASのURL
     const RPG_GAS_URL = "https://script.google.com/macros/s/AKfycbwSVPNQZ60INpvWiKWnDjyx_78sclB1LF1rco0U0X0p-04hDnDXU7sphUqPxAczqtdm/exec";
+    const LIFF_ID = "2009859584-THwDZKBN";
 
-    async function sendAction(type, name) {
-        if (!liff.isLoggedIn()) { liff.login(); return; }
-        const profile = await liff.getProfile();
-        
-        // LINEトークへメッセージを飛ばす
-        liff.sendMessages([{
-            type: 'text',
-            text: `${name} を記録した！`
-        }]).then(() => {
-            // GASへデータ送信
-            fetch(RPG_GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({ type: type, userId: profile.userId, name: name })
-            });
-            liff.closeWindow();
-        });
-    }
+    let currentItemId = "default";
 
     window.onload = async () => {
-    try {
-        // 1. LIFFの初期化
-        await liff.init({ liffId: "2009859584-THwDZKBN" }); // あなたの新しいID
-        
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return;
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            const profile = await liff.getProfile();
+            const urlParams = new URLSearchParams(window.location.search);
+            currentItemId = urlParams.get('item') || "default";
+
+            // GASからステータスとボタン名を取得
+            const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}&item=${currentItemId}`);
+            const data = await res.json();
+
+            // ステータス反映
+            document.getElementById('user-level').innerText = data.lv;
+            document.getElementById('user-title').innerText = data.title;
+            document.getElementById('exp-bar').style.width = (data.totalExp % 100) + "%";
+
+            // ボタン動的生成（安心版ロジック継承）
+            const grid = document.getElementById('potion-grid');
+            grid.innerHTML = '';
+            data.buttons.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'potion-item';
+                div.onclick = () => sendAction('supply', name);
+                div.innerHTML = `<div class="potion-icon">🧪</div><div class="potion-label">${name}</div>`;
+                grid.appendChild(div);
+            });
+
+        } catch (e) {
+            console.error(e);
+        } finally {
+            document.getElementById('loading-overlay').style.display = 'none';
         }
+    };
 
+    async function sendAction(type, name) {
         const profile = await liff.getProfile();
-
-        // 2. GASからステータスを取得
-        // タイムアウト対策として5秒で切り上げる設定を追加
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}`, {
-            signal: controller.signal
+        
+        // GASへ送信
+        fetch(RPG_GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({ type: type, userId: profile.userId, name: name })
         });
-        
-        clearTimeout(timeoutId);
-        const status = await res.json();
-        
-        // 3. 画面への反映
-        document.getElementById('user-level').innerText = status.lv || "1";
-        document.getElementById('user-title').innerText = status.title || "冒険者";
-        const currentExp = (status.totalExp || 0) % 100;
-        document.getElementById('exp-bar').style.width = currentExp + "%";
-        document.getElementById('exp-next').innerText = 100 - currentExp;
 
-    } catch (e) {
-        // エラーが起きた場合はアラートを出し、画面を強制表示する
-        console.error(e);
-        alert("通信エラーが発生しました。設定を確認してください。\nエラー内容: " + e.message);
-        
-        // 仮の値を表示して、ボタンだけは触れるようにする
-        document.getElementById('user-level').innerText = "?";
-        document.getElementById('user-title').innerText = "通信エラー";
-    } finally {
-        // 成功しても失敗しても、読み込み画面は必ず消す
-        document.getElementById('loading-overlay').style.display = 'none';
+        // LINE通知（失敗しても次へ進む）
+        try {
+            if (liff.isInClient()) {
+                await liff.sendMessages([{ type: 'text', text: `${name} を記録した！` }]);
+                liff.closeWindow();
+            } else {
+                alert(name + " を記録しました！");
+            }
+        } catch (e) {
+            alert(name + " を記録しました！");
+            liff.closeWindow();
+        }
     }
-};
+
+    function goToVital() {
+        location.href = `vital.html?item=${currentItemId}`;
+    }
 </script>
 </body>
 </html>
