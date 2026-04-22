@@ -26,7 +26,6 @@
         .potion-icon { font-size: 32px; margin-bottom: 8px; }
         .potion-label { font-size: 13px; font-weight: bold; color: #e2e8f0; }
         .quest-btn { width: calc(100% - 40px); margin: 25px 20px 0; padding: 18px; border-radius: 18px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4); outline: none; }
-        .quest-btn:active { transform: scale(0.98); opacity: 0.9; }
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
     </style>
 </head>
@@ -56,18 +55,17 @@
     </div>
 
     <div class="label-group">ポーション（サプリ・服薬）</div>
-    <div id="potion-grid" class="potion-grid">
-        </div>
+    <div id="potion-grid" class="potion-grid"></div>
 
     <button class="quest-btn" onclick="goToVital()">⚔️ 身体データ入力（探索）</button>
 </div>
 
 <script>
-    // ★重要★ ここをご自身のGASのURLに書き換えてください
     const RPG_GAS_URL = "https://script.google.com/macros/s/AKfycbwSVPNQZ60INpvWiKWnDjyx_78sclB1LF1rco0U0X0p-04hDnDXU7sphUqPxAczqtdm/exec";
     const LIFF_ID = "2009859584-THwDZKBN";
 
     let currentItemId = "default";
+    let buttonConfigs = []; // 安心版の遷移先URLを保持する用
 
     window.onload = async () => {
         try {
@@ -78,74 +76,64 @@
             const urlParams = new URLSearchParams(window.location.search);
             currentItemId = urlParams.get('item') || "default";
 
-            // GASからステータスと管理マスターのボタン名を取得
             const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}&item=${currentItemId}`);
             const data = await res.json();
 
-            // 1. ステータスを画面に反映
             document.getElementById('user-level').innerText = data.lv;
             document.getElementById('user-title').innerText = data.title;
-            // 経験値バーの計算 (0-99%)
             const expPercent = (data.totalExp % 100);
-            setTimeout(() => {
-                document.getElementById('exp-bar').style.width = expPercent + "%";
-            }, 100);
+            setTimeout(() => { document.getElementById('exp-bar').style.width = expPercent + "%"; }, 100);
 
-            // 2. ボタン生成（安心版の管理マスター連携）
+            // ★安心版のボタン生成（遷移先URLをセット）
             const grid = document.getElementById('potion-grid');
-            grid.innerHTML = ''; // 初期化
-            data.buttons.forEach(name => {
+            grid.innerHTML = '';
+            buttonConfigs = data.buttons; // GASから [ {name, url}, ... ] の形式で受け取る
+            
+            buttonConfigs.forEach((btn, index) => {
                 const div = document.createElement('div');
                 div.className = 'potion-item';
-                div.onclick = () => sendAction('supply', name);
-                div.innerHTML = `
-                    <div class="potion-icon">🧪</div>
-                    <div class="potion-label">${name}</div>
-                `;
+                // 記録後に安心版のURLへ飛ばす
+                div.onclick = () => sendAction('supply', btn.name, btn.url);
+                div.innerHTML = `<div class="potion-icon">🧪</div><div class="potion-label">${btn.name}</div>`;
                 grid.appendChild(div);
             });
 
         } catch (e) {
-            console.error("初期化エラー:", e);
-            alert("データの取得に失敗しました。電波の良いところで再度お試しください。");
+            console.error(e);
         } finally {
-            // ローディング画面を消す
-            document.getElementById('loading-overlay').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loading-overlay').style.display = 'none';
-            }, 500);
+            document.getElementById('loading-overlay').style.display = 'none';
         }
     };
 
-    async function sendAction(type, name) {
+    async function sendAction(type, name, redirectUrl) {
         try {
             const profile = await liff.getProfile();
             
-            // GASへ記録を送信 (バックグラウンド)
-            fetch(RPG_GAS_URL, {
+            // 1. GASへ送信（名前も一緒に送って「名無しの勇者」を卒業）
+            await fetch(RPG_GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
                 body: JSON.stringify({ 
                     type: type, 
                     userId: profile.userId, 
-                    name: name 
+                    name: name,
+                    displayName: profile.displayName 
                 })
             });
 
-            // LINEトークへの送信
+            // 2. LINE通知 & 遷移
             if (liff.isInClient()) {
-                await liff.sendMessages([{
-                    type: 'text',
-                    text: `${name} を記録した！`
-                }]);
-                liff.closeWindow();
+                await liff.sendMessages([{ type: 'text', text: `${name} を記録した！` }]);
+                // ★安心版の「回数登録画面」へ遷移
+                if(redirectUrl) { location.href = redirectUrl; } 
+                else { liff.closeWindow(); }
             } else {
                 alert(name + " を記録しました！");
+                if(redirectUrl) { location.href = redirectUrl; }
             }
         } catch (e) {
-            console.error("送信エラー:", e);
-            alert(name + " を記録しました！");
-            liff.closeWindow();
+            if(redirectUrl) { location.href = redirectUrl; }
+            else { liff.closeWindow(); }
         }
     }
 
