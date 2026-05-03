@@ -3,100 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ステータス更新 - ろぎてむ</title>
+    <title>ろぎてむ・クエスト</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #1a202c; padding: 15px; color: #fff; margin: 0; }
-        .form-card { background: #2d3748; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 500px; margin: auto; border: 1px solid #4a5568; }
-        h2 { text-align: center; color: #ed64a6; font-size: 22px; margin-bottom: 25px; letter-spacing: 2px; }
-        h3 { border-left: 4px solid #ed64a6; padding-left: 12px; font-size: 14px; margin: 25px 0 15px; color: #cbd5e0; background: rgba(0,0,0,0.2); padding: 5px 12px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; margin-bottom: 6px; font-weight: bold; color: #a0aec0; }
-        input, textarea { width: 100%; padding: 12px; background: #1a202c; border: 1px solid #4a5568; border-radius: 12px; box-sizing: border-box; font-size: 16px; color: #fff; outline: none; }
-        input:focus { border-color: #ed64a6; }
-        .btn-submit { width: 100%; background: linear-gradient(135deg, #ed64a6 0%, #764ba2 100%); color: white; border: none; padding: 18px; border-radius: 16px; font-weight: bold; margin-top: 20px; font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(237,100,166,0.3); }
-        .btn-submit:disabled { background: #4a5568; cursor: not-allowed; }
-        #after-submit { display: none; text-align: center; margin-top: 25px; padding: 20px; border-radius: 20px; background: rgba(0,0,0,0.3); border: 2px solid #06C755; }
-        .line-btn { display: block; width: 100%; padding: 16px 0; background-color: #06C755; color: white; text-decoration: none; border-radius: 16px; font-weight: bold; margin-top: 15px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a202c; margin: 0; padding: 20px 0; color: #fff; -webkit-tap-highlight-color: transparent; }
+        .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); overflow: hidden; border: 2px solid #4a5568; padding-bottom: 30px; }
+        .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #ed64a6; }
+        .header h1 { margin: 0; font-size: 22px; letter-spacing: 3px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-weight: 900; }
+        .status-box { background: rgba(0,0,0,0.3); margin: 20px; padding: 18px; border-radius: 20px; border: 1px solid #4a5568; }
+        .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .level-badge { background: #ed64a6; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 0 10px rgba(237,100,166,0.5); }
+        .title-text { font-size: 14px; color: #a0aec0; font-weight: bold; }
+        .exp-container { position: relative; background: #1a202c; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #4a5568; }
+        .exp-bar { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        .label-group { font-size: 11px; font-weight: bold; color: #718096; margin: 25px 20px 10px; letter-spacing: 2px; }
+        .stamp-grid { display: flex; justify-content: space-around; padding: 0 15px; gap: 10px; }
+        .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; transition: 0.2s; outline: none; }
+        .stamp-btn:active { transform: scale(1.2); background: #4fd1c5; }
+        .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
+        .potion-item { background: linear-gradient(145deg, #3d4957, #2d3748); border: 1px solid #4a5568; border-radius: 20px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .potion-item:active { border-color: #ed64a6; background: #4a5568; transform: translateY(3px); }
+        .potion-icon { font-size: 32px; margin-bottom: 8px; }
+        .potion-label { font-size: 13px; font-weight: bold; color: #e2e8f0; }
+        .quest-btn { width: calc(100% - 40px); margin: 15px 20px 0; padding: 18px; border-radius: 18px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4); outline: none; }
+        .guild-btn { background: #2b6cb0; border-color: #63b3ed; margin-top: 10px; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.5s; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #ed64a6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="form-card">
-        <h2>⚖️ ステータス更新</h2>
-        
-        <h3>【体組成】</h3>
-        <div class="input-group">
-            <label>体重 (kg)</label>
-            <input type="number" id="weight" step="0.1" placeholder="65.0">
-        </div>
-        <div class="input-group">
-            <label>体脂肪率 (%)</label>
-            <input type="number" id="fat_pc" step="0.1" placeholder="18.0">
-        </div>
 
-        <h3>【身体データ】</h3>
-        <div class="input-group">
-            <label>歩数 (探索距離)</label>
-            <input type="number" id="steps" placeholder="8000">
-        </div>
-        <div class="input-group">
-            <label>冒険記録 (メモ)</label>
-            <textarea id="exercise" rows="2" placeholder="筋トレ 30分 など"></textarea>
-        </div>
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text" style="letter-spacing: 3px; font-weight: bold;">冒険の準備中...</div>
+</div>
 
-        <button class="btn-submit" id="submit-btn" onclick="submitVital()">記録を送信して探索完了</button>
-
-        <div id="after-submit">
-            <p style="font-weight: bold; color: #48bb78;">✅ ギルドへの報告が完了しました！</p>
-            <p style="font-size: 13px; color: #a0aec0;">経験値が加算されました。</p>
-            <a href="https://lin.ee/SOddHXZ" class="line-btn">LINEへ戻る</a>
+<div class="card">
+    <div class="header"><h1>ROGITEM QUEST</h1></div>
+    <div class="status-box">
+        <div class="user-info">
+            <span class="title-text" id="user-title">ロード中...</span>
+            <span class="level-badge">Lv.<span id="user-level">-</span></span>
         </div>
+        <div class="exp-container"><div id="exp-bar" class="exp-bar"></div></div>
     </div>
 
-    <script>
-        const RPG_GAS_URL = "https://script.google.com/macros/s/AKfycbwSVPNQZ60INpvWiKWnDjyx_78sclB1LF1rco0U0X0p-04hDnDXU7sphUqPxAczqtdm/exec";
-        const LIFF_ID = "2009859584-THwDZKBN";
+    <div class="label-group">今の気分（宿屋で休息）</div>
+    <div class="stamp-grid">
+        <button class="stamp-btn" onclick="sendAction('stamp', '😊')">😊</button>
+        <button class="stamp-btn" onclick="sendAction('stamp', '😑')">😑</button>
+        <button class="stamp-btn" onclick="sendAction('stamp', '😫')">😫</button>
+        <button class="stamp-btn" onclick="sendAction('stamp', '🤒')">🤒</button>
+    </div>
 
-        window.onload = async () => {
+    <div class="label-group">ポーション（サプリ・服薬）</div>
+    <div id="potion-grid" class="potion-grid"></div>
+
+    <div class="label-group">ギルド貢献（専門家への相談）</div>
+    <div style="padding: 0 20px;">
+        <button class="potion-item guild-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="sendAction('question', '知の相談')">
+            <span class="potion-icon" style="margin:0; font-size: 24px;">📜</span>
+            <span class="potion-label">知の貢献：悩みを相談する</span>
+        </button>
+    </div>
+
+    <div class="label-group">身体データ（探索記録）</div>
+    <button class="quest-btn" onclick="location.href='vital.html'+window.location.search">⚔️ 身体データ入力（探索）</button>
+</div>
+
+<script>
+    // ★重要：新しいGASのデプロイURLに書き換えてください
+    const RPG_GAS_URL = "https://script.google.com/macros/s/AKfycbwSVPNQZ60INpvWiKWnDjyx_78sclB1LF1rco0U0X0p-04hDnDXU7sphUqPxAczqtdm/exec";
+    const LIFF_ID = "2009859584-THwDZKBN";
+
+    window.onload = async () => {
+        try {
             await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); }
-        };
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            
+            const profile = await liff.getProfile();
+            const urlParams = new URLSearchParams(window.location.search);
+            const item = urlParams.get('item') || "default";
 
-        async function submitVital() {
-            const weight = document.getElementById('weight').value;
-            if(!weight) { alert("体重を入力してください"); return; }
+            const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}&item=${item}`);
+            const data = await res.json();
 
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.innerText = "送信中...";
+            document.getElementById('user-level').innerText = data.lv;
+            document.getElementById('user-title').innerText = data.title;
+            setTimeout(() => {
+                // レベル10ごとにリセットされるバー（経験値100で1レベル分とする計算例）
+                document.getElementById('exp-bar').style.width = (data.totalExp % 100) + "%";
+            }, 100);
 
-            try {
-                const profile = await liff.getProfile();
-                const data = {
-                    type: "vital_record",
-                    userId: profile.userId,
-                    weight: weight,
-                    fat_pc: document.getElementById('fat_pc').value,
-                    steps: document.getElementById('steps').value,
-                    exercise: document.getElementById('exercise').value,
-                    name: "身体測定"
-                };
+            const grid = document.getElementById('potion-grid');
+            grid.innerHTML = '';
+            data.buttons.forEach(btn => {
+                const div = document.createElement('div');
+                div.className = 'potion-item';
+                // アイテムIDと名前を両方送るように修正
+                div.onclick = () => sendAction('supply', btn.name, btn.id);
+                div.innerHTML = `<div class="potion-icon">🧪</div><div class="potion-label">${btn.name}</div>`;
+                grid.appendChild(div);
+            });
 
-                await fetch(RPG_GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    body: JSON.stringify(data)
-                });
+            const loader = document.getElementById('loading-overlay');
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 500);
 
-                document.getElementById('after-submit').style.display = 'block';
-                btn.style.display = 'none';
-            } catch (e) {
-                console.error(e);
-                alert("送信に失敗しました。再度お試しください。");
-                btn.disabled = false;
-                btn.innerText = "記録を送信して探索完了";
-            }
+        } catch (e) {
+            console.error(e);
+            document.getElementById('loading-text').innerText = "通信エラー：再起動してください";
         }
-    </script>
+    };
+
+    async function sendAction(type, name, itemId = "") {
+        const loader = document.getElementById('loading-overlay');
+        const text = document.getElementById('loading-text');
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        text.innerText = "ギルドへ報告中...";
+
+        try {
+            const profile = await liff.getProfile();
+            await fetch(RPG_GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ 
+                    type: type, 
+                    userId: profile.userId, 
+                    itemId: itemId, 
+                    name: name 
+                })
+            });
+
+            text.innerText = "記録完了！";
+            
+            setTimeout(() => {
+                if (liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    loader.style.opacity = '0';
+                    setTimeout(() => { loader.style.display = 'none'; }, 500);
+                }
+            }, 1500);
+
+        } catch (e) {
+            alert("報告に失敗しました。");
+            loader.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
