@@ -140,7 +140,7 @@
 
     window.onload = async () => {
         startSlider();
-        const id = new URLSearchParams(window.location.search).get('item') || "lg-vw7k7t";
+        const id = new URLSearchParams(window.location.search).get('item') || "rpg-X7M4Q9K2";
         document.getElementById('display-id').innerText = id;
         try {
             const res = await fetch(`${GAS_URL}?type=getSettings&item=${id}`);
