@@ -6,16 +6,23 @@
     <title>ろぎてむ・クエスト</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        /* デザイン部分はあなたのこだわりを維持 */
         body { font-family: sans-serif; background: #1a202c; color: #fff; margin: 0; padding: 20px 0; text-align: center; }
         .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; border: 2px solid #4a5568; padding-bottom: 30px; overflow: hidden; }
         .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 20px; border-bottom: 3px solid #ed64a6; }
         .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; }
+        
+        /* ステータス表示エリアのスタイル */
+        .status-container { background: rgba(0,0,0,0.2); margin: 15px; padding: 15px; border-radius: 15px; border: 1px solid #4a5568; }
+        .level-badge { background: #ed64a6; color: #fff; padding: 2px 10px; border-radius: 10px; font-weight: bold; font-size: 14px; margin-right: 5px; }
+        .exp-text { font-size: 12px; color: #a0aec0; margin-top: 5px; display: block; }
+
         .label-group { font-size: 11px; color: #718096; margin: 20px; text-align: left; letter-spacing: 2px; font-weight: bold; }
         .stamp-grid { display: flex; justify-content: space-around; padding: 0 15px; gap: 10px; }
         .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; }
         .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
         .potion-item { background: #3d4957; border: 1px solid #4a5568; border-radius: 20px; padding: 15px; cursor: pointer; }
+        .vital-btn { background: #4a5568; border: 1px solid #ed64a6; border-radius: 20px; padding: 15px; margin: 20px; cursor: pointer; display: block; text-decoration: none; color: white; font-weight: bold; }
+
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
@@ -28,6 +35,14 @@
 <div class="card">
     <div class="header"><h1>ROGITEM QUEST</h1></div>
     
+    <div class="status-container">
+        <div>
+            <span class="level-badge">Lv.<span id="user-level">--</span></span>
+            <span style="font-weight: bold;">冒険者</span>
+        </div>
+        <span class="exp-text">累積経験値: <span id="user-exp">0</span> EXP</span>
+    </div>
+
     <div class="label-group">今の気分（宿屋で休息）</div>
     <div class="stamp-grid">
         <button class="stamp-btn" onclick="execAction('😊')">😊</button>
@@ -43,14 +58,13 @@
             <div id="item-display" style="font-size:12px">アイテムを記録</div>
         </div>
     </div>
+
+    <a href="vital.html" class="vital-btn">⚖️ 身体データ入力 (EXP+30)</a>
 </div>
 
 <script>
-    // ★現在の正常に動いている設定を維持★
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec"; 
     const LIFF_URL = "https://liff.line.me/2009859584-THwDZKBN";
-
-    // LIFF_URLからIDだけを自動抽出
     const MY_LIFF_ID = LIFF_URL.split('/').pop();
 
     async function main() {
@@ -58,12 +72,10 @@
             await liff.init({ liffId: MY_LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
             
-            // --- 追加：レベルと経験値の同期処理 ---
             const profile = await liff.getProfile();
+            // 最新ステータスを取得して反映
             updateUserStatus(profile.userId);
-            // ------------------------------------
 
-            // パラメータ取得
             const params = new URLSearchParams(window.location.search);
             const item = params.get('item');
             if (item) {
@@ -76,23 +88,15 @@
         }
     }
 
-    // ★新規追加：GASから最新ステータスを取得して表示を更新する関数
     async function updateUserStatus(userId) {
         try {
-            // doGet(type=getSettings) を利用してステータスを取得
             const response = await fetch(`${GAS_URL}?userId=${userId}&type=getSettings`);
             const data = await response.json();
             
             if (data.level) {
-                // HTML側の ID が user-level と user-exp になっているか確認してください
-                const lvElem = document.getElementById('user-level');
-                const expElem = document.getElementById('user-exp');
-                
-                if (lvElem) lvElem.innerText = data.level;
-                if (expElem) expElem.innerText = data.exp;
-
-                // もし「見習い」などの称号も連動させる場合はここに追加
-                console.log("Status Updated: Lv." + data.level);
+                // ここで HTML の id="user-level" と id="user-exp" に数字を流し込みます
+                document.getElementById('user-level').innerText = data.level;
+                document.getElementById('user-exp').innerText = data.exp;
             }
         } catch (e) {
             console.error("Status Sync Error:", e);
@@ -108,7 +112,6 @@
             const params = new URLSearchParams(window.location.search);
             const item = params.get('item');
 
-            // 成功しているコードと全く同じfetch処理
             await fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -119,7 +122,6 @@
                 })
             });
 
-            // 成功コードの肝：即座に閉じる
             if (liff.isInClient()) {
                 liff.closeWindow();
             } else {
