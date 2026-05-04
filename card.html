@@ -46,7 +46,7 @@
 </div>
 
 <script>
-    // ★うまくいっているコードの設定方法に統一★
+    // ★現在の正常に動いている設定を維持★
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec"; 
     const LIFF_URL = "https://liff.line.me/2009859584-THwDZKBN";
 
@@ -58,6 +58,11 @@
             await liff.init({ liffId: MY_LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
             
+            // --- 追加：レベルと経験値の同期処理 ---
+            const profile = await liff.getProfile();
+            updateUserStatus(profile.userId);
+            // ------------------------------------
+
             // パラメータ取得
             const params = new URLSearchParams(window.location.search);
             const item = params.get('item');
@@ -68,6 +73,29 @@
             document.getElementById('loading-overlay').style.display = 'none';
         } catch (err) {
             document.getElementById('msg').innerText = "エラー: " + err;
+        }
+    }
+
+    // ★新規追加：GASから最新ステータスを取得して表示を更新する関数
+    async function updateUserStatus(userId) {
+        try {
+            // doGet(type=getSettings) を利用してステータスを取得
+            const response = await fetch(`${GAS_URL}?userId=${userId}&type=getSettings`);
+            const data = await response.json();
+            
+            if (data.level) {
+                // HTML側の ID が user-level と user-exp になっているか確認してください
+                const lvElem = document.getElementById('user-level');
+                const expElem = document.getElementById('user-exp');
+                
+                if (lvElem) lvElem.innerText = data.level;
+                if (expElem) expElem.innerText = data.exp;
+
+                // もし「見習い」などの称号も連動させる場合はここに追加
+                console.log("Status Updated: Lv." + data.level);
+            }
+        } catch (e) {
+            console.error("Status Sync Error:", e);
         }
     }
 
@@ -91,7 +119,7 @@
                 })
             });
 
-            // 成功コードの肝：即座に閉じる（余計なURL移動をさせない）
+            // 成功コードの肝：即座に閉じる
             if (liff.isInClient()) {
                 liff.closeWindow();
             } else {
