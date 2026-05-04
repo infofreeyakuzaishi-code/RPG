@@ -6,44 +6,38 @@
     <title>ろぎてむ・クエスト</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
+        /* デザイン部分は維持 */
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a202c; margin: 0; padding: 20px 0; color: #fff; -webkit-tap-highlight-color: transparent; }
         .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); overflow: hidden; border: 2px solid #4a5568; padding-bottom: 30px; }
         .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #ed64a6; }
         .header h1 { margin: 0; font-size: 22px; letter-spacing: 3px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-weight: 900; }
         .status-box { background: rgba(0,0,0,0.3); margin: 20px; padding: 18px; border-radius: 20px; border: 1px solid #4a5568; }
         .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .level-badge { background: #ed64a6; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 0 10px rgba(237,100,166,0.5); }
+        .level-badge { background: #ed64a6; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
         .title-text { font-size: 14px; color: #a0aec0; font-weight: bold; }
         .exp-container { position: relative; background: #1a202c; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #4a5568; }
-        .exp-bar { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        .exp-bar { background: linear-gradient(90deg, #4fd1c5, #63b3ed); height: 100%; width: 0%; transition: width 1.5s; }
         .label-group { font-size: 11px; font-weight: bold; color: #718096; margin: 25px 20px 10px; letter-spacing: 2px; }
         .stamp-grid { display: flex; justify-content: space-around; padding: 0 15px; gap: 10px; }
-        .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; transition: 0.2s; outline: none; }
-        .stamp-btn:active { transform: scale(1.2); background: #4fd1c5; }
+        .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; }
         .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
-        .potion-item { background: linear-gradient(145deg, #3d4957, #2d3748); border: 1px solid #4a5568; border-radius: 20px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .potion-item:active { border-color: #ed64a6; background: #4a5568; transform: translateY(3px); }
-        .potion-icon { font-size: 32px; margin-bottom: 8px; }
-        .potion-label { font-size: 13px; font-weight: bold; color: #e2e8f0; }
-        .quest-btn { width: calc(100% - 40px); margin: 15px 20px 0; padding: 18px; border-radius: 18px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4); outline: none; }
-        .guild-btn { background: #2b6cb0; border-color: #63b3ed; margin-top: 10px; }
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.5s; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #ed64a6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .potion-item { background: linear-gradient(145deg, #3d4957, #2d3748); border: 1px solid #4a5568; border-radius: 20px; padding: 20px 10px; text-align: center; cursor: pointer; }
+        .quest-btn { width: calc(100% - 40px); margin: 15px 20px 0; padding: 18px; border-radius: 18px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
 <div id="loading-overlay">
-    <div class="spinner"></div>
-    <div id="loading-text" style="letter-spacing: 3px; font-weight: bold;">冒険の準備中...</div>
+    <div style="font-size: 24px; margin-bottom: 20px;">⌛</div>
+    <div id="loading-text">冒険の準備中...</div>
 </div>
 
 <div class="card">
     <div class="header"><h1>ROGITEM QUEST</h1></div>
     <div class="status-box">
         <div class="user-info">
-            <span class="title-text" id="user-title">ロード中...</span>
+            <span class="title-text" id="user-title">称号: 読み込み中</span>
             <span class="level-badge">Lv.<span id="user-level">-</span></span>
         </div>
         <div class="exp-container"><div id="exp-bar" class="exp-bar"></div></div>
@@ -51,86 +45,105 @@
 
     <div class="label-group">今の気分（宿屋で休息）</div>
     <div class="stamp-grid">
-        <button class="stamp-btn" onclick="sendAction('stamp', '😊')">😊</button>
-        <button class="stamp-btn" onclick="sendAction('stamp', '😑')">😑</button>
-        <button class="stamp-btn" onclick="sendAction('stamp', '😫')">😫</button>
-        <button class="stamp-btn" onclick="sendAction('stamp', '🤒')">🤒</button>
+        <button class="stamp-btn" onclick="sendData('😊')">😊</button>
+        <button class="stamp-btn" onclick="sendData('😑')">😑</button>
+        <button class="stamp-btn" onclick="sendData('😫')">😫</button>
+        <button class="stamp-btn" onclick="sendData('🤒')">🤒</button>
     </div>
 
     <div class="label-group">ポーション（サプリ・服薬）</div>
-    <div id="potion-grid" class="potion-grid"></div>
-
-    <div class="label-group">ギルド貢献（専門家への相談）</div>
-    <div style="padding: 0 20px;">
-        <button class="potion-item guild-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="sendAction('question', '知の相談')">
-            <span class="potion-icon" style="margin:0; font-size: 24px;">📜</span>
-            <span class="potion-label">知の貢献：悩みを相談する</span>
-        </button>
-    </div>
-
-    <div class="label-group">身体データ（探索記録）</div>
-    <button class="quest-btn" onclick="location.href='vital.html'+window.location.search">⚔️ 身体データ入力（探索）</button>
+    <div id="potion-grid" class="potion-grid">
+        </div>
 </div>
 
 <script>
-    // ★重要：新しいGASのデプロイURLに書き換えてください
-    const RPG_GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
+    // 設定
     const LIFF_ID = "2009859584-THwDZKBN";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
 
-    window.onload = async () => {
+    let userProfile = null;
+
+    async function initializeLiff() {
         try {
             await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            
-            const profile = await liff.getProfile();
-            const urlParams = new URLSearchParams(window.location.search);
-            const item = urlParams.get('item') || "default";
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
+            userProfile = await liff.getProfile();
+            loadStatus();
+        } catch (error) {
+            console.error(error);
+            document.getElementById('loading-text').innerText = "初期化エラー";
+        }
+    }
 
-            const res = await fetch(`${RPG_GAS_URL}?type=getStatus&userId=${profile.userId}&item=${item}`);
-            const data = await res.json();
+    // ステータスとボタン情報をGASから取得
+    async function loadStatus() {
+        const params = new URLSearchParams(window.location.search);
+        const item = params.get('item') || "default";
 
-            document.getElementById('user-level').innerText = data.lv;
-            document.getElementById('user-title').innerText = data.title;
-            setTimeout(() => {
-                // レベル10ごとにリセットされるバー（経験値100で1レベル分とする計算例）
-                document.getElementById('exp-bar').style.width = (data.totalExp % 100) + "%";
-            }, 100);
+        try {
+            const response = await fetch(`${GAS_URL}?type=getSettings&userId=${userProfile.userId}&item=${item}`);
+            const data = await response.json();
 
+            // ステータス反映
+            document.getElementById('user-level').innerText = data.level || 1;
+            document.getElementById('user-title').innerText = "称号: 冒険者";
+            document.getElementById('exp-bar').style.width = (data.exp % 100) + "%";
+
+            // ポーションボタン作成
             const grid = document.getElementById('potion-grid');
             grid.innerHTML = '';
             data.buttons.forEach(btn => {
-                const div = document.createElement('div');
-                div.className = 'potion-item';
-                // アイテムIDと名前を両方送るように修正
-                div.onclick = () => sendAction('supply', btn.name, btn.id);
-                div.innerHTML = `<div class="potion-icon">🧪</div><div class="potion-label">${btn.name}</div>`;
-                grid.appendChild(div);
+                if (btn.name !== "未設定") {
+                    const div = document.createElement('div');
+                    div.className = 'potion-item';
+                    div.onclick = () => sendData(btn.name, btn.id);
+                    div.innerHTML = `<div style="font-size:24px">🧪</div><div style="font-size:12px">${btn.name}</div>`;
+                    grid.appendChild(div);
+                }
             });
 
-            const loader = document.getElementById('loading-overlay');
-            loader.style.opacity = '0';
-            setTimeout(() => { loader.style.display = 'none'; }, 500);
-
+            // ローディング消去
+            document.getElementById('loading-overlay').style.display = 'none';
         } catch (e) {
             console.error(e);
-            document.getElementById('loading-text').innerText = "通信エラー：再起動してください";
         }
-    };
+    }
 
-// 😊ボタンを押した時の処理
-async function sendAction(name) {
-    // 1. 裏側でGASに送る（これなら別のアカウントには飛ばない）
-    await fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({ 
-            type: "stamp", // 判定用
-            name: name,    // 😊 など
-            userId: profile.userId 
-        })
-    });
-    // 2. 静かに閉じる（これが重要！）
-    liff.closeWindow();
-}</script>
+    // ★重要：成功しているコードと同じ「fetchして閉じるだけ」の処理
+    async function sendData(name, itemId = "") {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        document.getElementById('loading-text').innerText = "記録を報告中...";
+
+        try {
+            // GASにデータを送信
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors", // これが成功パターンの鍵
+                body: JSON.stringify({
+                    userId: userProfile.userId,
+                    name: name,
+                    item: itemId || name, // スタンプの場合は名前をID代わりにする
+                    type: itemId ? "supply" : "stamp"
+                })
+            });
+
+            // 送信完了後、即座にLIFFを閉じる
+            if (liff.isInClient()) {
+                liff.closeWindow();
+            } else {
+                alert("記録しました！");
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        } catch (e) {
+            alert("送信エラー");
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+    }
+
+    window.onload = initializeLiff;
+</script>
 </body>
 </html>
