@@ -73,14 +73,23 @@
 
             try {
                 const profile = await liff.getProfile();
-                const data = {
-                    type: "vital_record",
-                    userId: profile.userId,
-                    weight: weight,
-                    fat_pc: document.getElementById('fat_pc').value,
-                    steps: document.getElementById('steps').value,
-                    exercise: document.getElementById('exercise').value
-                };
+              // vital.html の submitVital 関数内を修正
+const data = {
+    type: "vital_record",
+    userId: profile.userId,
+    weight: weight,
+    fat_pc: document.getElementById('fat_pc').value || 0, // 送る
+    fat_kg: "",    // 空文字で補完
+    muscle: "",    // 空文字で補完
+    water_pc: "",  // 空文字で補完
+    water_kg: "",  // 空文字で補完
+    protein_pc: "",// 空文字で補完
+    protein_kg: "",// 空文字で補完
+    steps: document.getElementById('steps').value || 0,
+    libre: "",     // 空文字で補完
+    blood: "",     // 空文字で補完
+    exercise: document.getElementById('exercise').value
+};
 
                 await fetch(RPG_GAS_URL, {
                     method: "POST",
