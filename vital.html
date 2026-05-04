@@ -6,23 +6,45 @@
     <title>ステータス更新</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a202c; color: #fff; padding: 20px; }
-        .card { background: #2d3748; padding: 25px; border-radius: 20px; border: 1px solid #4a5568; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #4a5568; background: #1a202c; color: #fff; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: #fff; font-weight: bold; cursor: pointer; }
-        #after { display: none; text-align: center; margin-top: 20px; color: #4fd1c5; }
+        body { font-family: sans-serif; background: #1a202c; color: #fff; padding: 15px; margin: 0; }
+        .card { background: #2d3748; padding: 20px; border-radius: 15px; border: 1px solid #4a5568; max-width: 500px; margin: auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        label { display: block; margin-top: 10px; font-size: 12px; color: #a0aec0; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #4a5568; background: #1a202c; color: #fff; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #ed64a6, #9f7aea); color: #fff; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        #after { display: none; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="card" id="form">
-        <h2 style="color:#ed64a6; text-align:center;">⚖️ ステータス更新</h2>
-        <label>体重 (kg)</label><input type="number" id="weight" step="0.1" placeholder="60.0">
-        <label>体脂肪率 (%)</label><input type="number" id="fat_pc" step="0.1" placeholder="18.0">
-        <label>歩数</label><input type="number" id="steps" placeholder="8000">
-        <label>メモ</label><input type="text" id="exercise" placeholder="筋トレなど">
-        <button class="btn" onclick="send()">記録して探索終了</button>
+        <h2 style="color:#ed64a6; text-align:center; margin:0 0 15px 0;">⚖️ ステータス更新</h2>
+        
+        <div class="grid">
+            <div><label>体重 (kg)</label><input type="number" id="weight" step="0.1" placeholder="60.0"></div>
+            <div><label>歩数</label><input type="number" id="steps" placeholder="8000"></div>
+        </div>
+
+        <div class="grid">
+            <div><label>体脂肪率 (%)</label><input type="number" id="fat_pc" step="0.1"></div>
+            <div><label>体脂肪量 (kg)</label><input type="number" id="fat_kg" step="0.1"></div>
+        </div>
+
+        <div class="grid">
+            <div><label>筋肉量 (kg)</label><input type="number" id="muscle" step="0.1"></div>
+            <div><label>たんぱく率 (%)</label><input type="number" id="protein_pc" step="0.1"></div>
+        </div>
+
+        <div class="grid">
+            <div><label>水分率 (%)</label><input type="number" id="water_pc" step="0.1"></div>
+            <div><label>リブレ (血糖)</label><input type="number" id="libre"></div>
+        </div>
+
+        <label>血液検査 / 運動報告など</label>
+        <input type="text" id="exercise" placeholder="スクワット30回 / 血液検査の結果など">
+
+        <button class="btn" onclick="send()">ギルドへ報告する</button>
     </div>
-    <div id="after"><h3>✅ 送信完了！</h3><p>LINEに戻ってください</p></div>
+    <div id="after"><h3>✅ 報告完了！</h3><p>LINEに戻ってください</p></div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
@@ -30,31 +52,36 @@
 
         async function send() {
             const w = document.getElementById('weight').value;
-            if(!w) return alert("体重を入力してください");
+            if(!w) return alert("体重は必須項目です");
             
             document.getElementById('form').style.opacity = "0.5";
-            const profile = await liff.getProfile();
-
-            fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({
-                    type: "vital_record",
-                    userId: profile.userId,
-                    weight: w,
-                    fat_pc: document.getElementById('fat_pc').value || 0,
-                    steps: document.getElementById('steps').value || 0,
-                    exercise: document.getElementById('exercise').value || ""
-                })
-            });
-
-            setTimeout(() => {
+            try {
+                const profile = await liff.getProfile();
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: JSON.stringify({
+                        type: "vital_record",
+                        userId: profile.userId,
+                        weight: w,
+                        fat_pc: document.getElementById('fat_pc').value || "",
+                        fat_kg: document.getElementById('fat_kg').value || "",
+                        muscle: document.getElementById('muscle').value || "",
+                        water_pc: document.getElementById('water_pc').value || "",
+                        protein_pc: document.getElementById('protein_pc').value || "",
+                        steps: document.getElementById('steps').value || "",
+                        libre: document.getElementById('libre').value || "",
+                        exercise: document.getElementById('exercise').value || ""
+                    })
+                });
                 document.getElementById('form').style.display = "none";
                 document.getElementById('after').style.display = "block";
-                setTimeout(() => liff.closeWindow(), 2000);
-            }, 1000);
+                setTimeout(() => liff.closeWindow(), 1500);
+            } catch (e) {
+                alert("送信エラー");
+                document.getElementById('form').style.opacity = "1";
+            }
         }
-
         window.onload = async () => {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) liff.login();
