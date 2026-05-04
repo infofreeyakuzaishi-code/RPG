@@ -3,138 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ろぎてむ・クエスト</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <title>ろぎてむ RPG Edition</title>
     <style>
-        body { font-family: sans-serif; background: #1a202c; color: #fff; margin: 0; padding: 20px 0; text-align: center; }
-        .card { background: #2d3748; width: 92%; max-width: 420px; margin: auto; border-radius: 28px; border: 2px solid #4a5568; padding-bottom: 30px; overflow: hidden; }
-        .header { background: linear-gradient(135deg, #44337a 0%, #764ba2 100%); padding: 20px; border-bottom: 3px solid #ed64a6; }
-        .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f9; margin: 0; display: flex; justify-content: center; min-height: 100vh; padding-top: 20px; }
+        .card { background: white; width: 92%; max-width: 420px; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; position: relative; padding-bottom: 30px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; }
         
-        /* ステータス表示エリアのスタイル */
-        .status-container { background: rgba(0,0,0,0.2); margin: 15px; padding: 15px; border-radius: 15px; border: 1px solid #4a5568; }
-        .level-badge { background: #ed64a6; color: #fff; padding: 2px 10px; border-radius: 10px; font-weight: bold; font-size: 14px; margin-right: 5px; }
-        .exp-text { font-size: 12px; color: #a0aec0; margin-top: 5px; display: block; }
+        /* ステータス表示 */
+        .status-box { background: rgba(255,255,255,0.15); border-radius: 15px; padding: 10px; margin-top: 15px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); }
+        .rank-badge { font-size: 11px; background: #feb47b; color: #764ba2; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        .level-val { font-size: 24px; font-weight: 900; margin-left: 5px; }
+        .exp-bar-bg { background: rgba(0,0,0,0.2); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        #exp-bar-fill { background: #48bb78; height: 100%; width: 0%; transition: width 1s ease-out; }
 
-        .label-group { font-size: 11px; color: #718096; margin: 20px; text-align: left; letter-spacing: 2px; font-weight: bold; }
-        .stamp-grid { display: flex; justify-content: space-around; padding: 0 15px; gap: 10px; }
-        .stamp-btn { background: #3d4957; border: 1px solid #4a5568; border-radius: 18px; flex: 1; padding: 15px 0; font-size: 30px; cursor: pointer; }
-        .potion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
-        .potion-item { background: #3d4957; border: 1px solid #4a5568; border-radius: 20px; padding: 15px; cursor: pointer; }
-        .vital-btn { background: #4a5568; border: 1px solid #ed64a6; border-radius: 20px; padding: 15px; margin: 20px; cursor: pointer; display: block; text-decoration: none; color: white; font-weight: bold; }
+        .guide-box { background: #ffffff; margin: 15px; padding: 15px; border-radius: 20px; border-left: 5px solid #667eea; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .guide-text { font-size: 12px; color: #4a5568; line-height: 1.5; }
+        
+        .section-title { font-size: 11px; font-weight: bold; color: #a0aec0; margin: 20px 20px 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .stamp-grid { display: flex; justify-content: space-around; padding: 0 20px; gap: 8px; }
+        .stamp-btn { background: white; border: 1px solid #e2e8f0; border-radius: 14px; flex: 1; padding: 10px 0; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .stamp-btn:active { transform: scale(1.2); }
 
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a202c; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .action-btn { width: calc(100% - 40px); margin: 0 20px 8px; padding: 14px; border-radius: 16px; border: 1.5px solid #667eea; background: #fff; color: #667eea; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
+
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
+        .menu-item { background: white; border: 2px solid #f0f4f8; border-radius: 18px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .menu-item:active { border-color: #667eea; background: #f8faff; }
+        .icon { font-size: 28px; margin-bottom: 5px; }
+        .label { font-size: 13px; font-weight: bold; color: #2d3748; }
+        .sub { font-size: 9px; color: #a0aec0; }
+
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #667eea; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-    <div id="msg">冒険の準備中...</div>
-</div>
-
 <div class="card">
-    <div class="header"><h1>ROGITEM QUEST</h1></div>
-    
-    <div class="status-container">
-        <div>
-            <span class="level-badge">Lv.<span id="user-level">--</span></span>
-            <span style="font-weight: bold;">冒険者</span>
+    <div id="loader">Loading...</div>
+    <div class="header">
+        <h1>ろぎてむ管理カード</h1>
+        <div class="status-box">
+            <div><span class="rank-badge" id="rank-name">見習い</span><span class="level-val">Lv.<span id="lv-num">1</span></span></div>
+            <div class="exp-bar-bg"><div id="exp-bar-fill"></div></div>
+            <div style="font-size: 9px; margin-top: 4px; opacity: 0.8;">NEXT EXP: <span id="exp-next">--</span></div>
         </div>
-        <span class="exp-text">累積経験値: <span id="user-exp">0</span> EXP</span>
     </div>
 
-    <div class="label-group">今の気分（宿屋で休息）</div>
+    <div class="guide-box">
+        <div class="guide-text">💊 記録するたびに<b>経験値(EXP)</b>が貯まり、レベルが上がります！目指せ「薬神」！</div>
+    </div>
+
+    <div class="section-title">今の体調 (EXP+5)</div>
     <div class="stamp-grid">
-        <button class="stamp-btn" onclick="execAction('😊')">😊</button>
-        <button class="stamp-btn" onclick="execAction('😑')">😑</button>
-        <button class="stamp-btn" onclick="execAction('😫')">😫</button>
-        <button class="stamp-btn" onclick="execAction('🤒')">🤒</button>
+        <button class="stamp-btn" onclick="sendToOA('😊')">😊</button>
+        <button class="stamp-btn" onclick="sendToOA('😑')">😑</button>
+        <button class="stamp-btn" onclick="sendToOA('😫')">😫</button>
+        <button class="stamp-btn" onclick="sendToOA('🤒')">🤒</button>
     </div>
+    
+    <div class="section-title">各種メニュー</div>
+    <button class="action-btn" onclick="location.href='vital.html'">⚖️ 身体データ入力 (EXP+30)</button>
+    <button class="action-btn" onclick="location.href='https://liff.line.me/2009859584-THwDZKBN'">📅 服薬カレンダーを表示</button>
 
-    <div class="label-group">ポーション（サプリ・服薬）</div>
-    <div id="potion-grid" class="potion-grid">
-        <div class="potion-item" onclick="execAction('記録')">
-            <div style="font-size:24px">🧪</div>
-            <div id="item-display" style="font-size:12px">アイテムを記録</div>
-        </div>
+    <div class="section-title">服薬記録 (EXP+10)</div>
+    <div class="menu-grid" id="grid">
+        <div id="slot-0" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
+        <div id="slot-1" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
+        <div id="slot-2" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
+        <div id="slot-3" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
     </div>
-
-    <a href="vital.html" class="vital-btn">⚖️ 身体データ入力 (EXP+30)</a>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec"; 
     const LIFF_URL = "https://liff.line.me/2009859584-THwDZKBN";
-    const MY_LIFF_ID = LIFF_URL.split('/').pop();
+    const EXP_TABLE = [0, 30, 100, 250, 500, 850, 1300, 2000, 3000, 5000];
 
-    async function main() {
-        try {
-            await liff.init({ liffId: MY_LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            
-            const profile = await liff.getProfile();
-            // 最新ステータスを取得して反映
-            updateUserStatus(profile.userId);
+    function sendToOA(txt) { window.location.href = `https://line.me/R/oaMessage/@999aavtu/?${encodeURIComponent(txt)}`; }
 
-            const params = new URLSearchParams(window.location.search);
-            const item = params.get('item');
-            if (item) {
-                document.getElementById('item-display').innerText = "薬・サプリを記録";
-            }
-            
-            document.getElementById('loading-overlay').style.display = 'none';
-        } catch (err) {
-            document.getElementById('msg').innerText = "エラー: " + err;
-        }
-    }
-
-    async function updateUserStatus(userId) {
-        try {
-            const response = await fetch(`${GAS_URL}?userId=${userId}&type=getSettings`);
-            const data = await response.json();
-            
-            if (data.level) {
-                // ここで HTML の id="user-level" と id="user-exp" に数字を流し込みます
-                document.getElementById('user-level').innerText = data.level;
-                document.getElementById('user-exp').innerText = data.exp;
-            }
-        } catch (e) {
-            console.error("Status Sync Error:", e);
-        }
-    }
-
-    async function execAction(actionName) {
-        document.getElementById('loading-overlay').style.display = 'flex';
-        document.getElementById('msg').innerText = "データを送信中...";
+    window.onload = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('item') || "rpg-X7M4Q9K2";
+        const userId = "USER_ID_PLACEHOLDER"; // 実際はLIFFから取得
 
         try {
-            const profile = await liff.getProfile();
-            const params = new URLSearchParams(window.location.search);
-            const item = params.get('item');
+            const res = await fetch(`${GAS_URL}?type=getSettings&item=${id}&userId=${userId}`);
+            const data = await res.json();
+            
+            // ステータス反映
+            const lv = data.level || 1;
+            const exp = data.exp || 0;
+            document.getElementById('lv-num').innerText = lv;
+            const nextExp = EXP_TABLE[lv] || "MAX";
+            document.getElementById('exp-next').innerText = nextExp;
+            const progress = nextExp === "MAX" ? 100 : (exp / nextExp) * 100;
+            document.getElementById('exp-bar-fill').style.width = progress + "%";
+            
+            const ranks = ["見習い", "見習い", "初級冒険者", "中級薬師", "上級薬師", "賢者", "名医", "大賢者", "英雄", "薬神"];
+            document.getElementById('rank-name').innerText = ranks[lv] || "薬神";
 
-            await fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({ 
-                    item: item || actionName,
-                    userId: profile.userId,
-                    name: actionName 
-                })
+            // ボタン反映
+            data.buttons.forEach((btn, i) => {
+                const el = document.getElementById(`slot-${i}`);
+                if (btn.name !== "未設定") {
+                    el.querySelector('.label').innerHTML = `${btn.name}<div class="sub">タップで記録</div>`;
+                } else {
+                    el.querySelector('.label').innerText = "＋新規登録";
+                    el.style.opacity = "0.5";
+                }
+                el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
             });
-
-            if (liff.isInClient()) {
-                liff.closeWindow();
-            } else {
-                alert("記録しました！");
-                document.getElementById('loading-overlay').style.display = 'none';
-            }
-        } catch (e) {
-            alert("送信エラー");
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-    }
-
-    main();
+        } finally { document.getElementById('loader').style.display = "none"; }
+    };
 </script>
 </body>
 </html>
