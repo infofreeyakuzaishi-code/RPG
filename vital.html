@@ -46,46 +46,74 @@
     </div>
     <div id="after"><h3>✅ 報告完了！</h3><p>LINEに戻ってください</p></div>
 
-    <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
-        const LIFF_ID = "2009859584-THwDZKBN";
+ <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
+    const LIFF_ID = "2009859584-THwDZKBN";
 
-        async function send() {
-            const w = document.getElementById('weight').value;
-            if(!w) return alert("体重は必須項目です");
-            
-            document.getElementById('form').style.opacity = "0.5";
-            try {
-                const profile = await liff.getProfile();
-                await fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    body: JSON.stringify({
-                        type: "vital_record",
-                        userId: profile.userId,
-                        weight: w,
-                        fat_pc: document.getElementById('fat_pc').value || "",
-                        fat_kg: document.getElementById('fat_kg').value || "",
-                        muscle: document.getElementById('muscle').value || "",
-                        water_pc: document.getElementById('water_pc').value || "",
-                        protein_pc: document.getElementById('protein_pc').value || "",
-                        steps: document.getElementById('steps').value || "",
-                        libre: document.getElementById('libre').value || "",
-                        exercise: document.getElementById('exercise').value || ""
-                    })
-                });
-                document.getElementById('form').style.display = "none";
-                document.getElementById('after').style.display = "block";
-                setTimeout(() => liff.closeWindow(), 1500);
-            } catch (e) {
-                alert("送信エラー");
-                document.getElementById('form').style.opacity = "1";
-            }
-        }
-        window.onload = async () => {
+    // ページ読み込み時の初期化
+    window.onload = async () => {
+        try {
             await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) liff.login();
-        };
-    </script>
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                // 初期化成功時にボタンを有効化する（任意）
+                console.log("LIFF初期化成功");
+            }
+        } catch (err) {
+            alert("LIFFの初期化に失敗しました: " + err.message);
+        }
+    };
+
+    async function send() {
+        const w = document.getElementById('weight').value;
+        if (!w) return alert("体重を入力してください");
+
+        const btn = document.querySelector('.btn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+        document.getElementById('form').style.opacity = "0.5";
+
+        try {
+            // ここで確実にプロフィールを待機する
+            const profile = await liff.getProfile();
+            const userId = profile.userId;
+
+            if (!userId) throw new Error("ユーザーIDが取得できませんでした");
+
+            // GASへ送信
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "vital_record",
+                    userId: userId,
+                    weight: w,
+                    fat_pc: document.getElementById('fat_pc').value || "",
+                    fat_kg: document.getElementById('fat_kg').value || "",
+                    muscle: document.getElementById('muscle').value || "",
+                    water_pc: document.getElementById('water_pc').value || "",
+                    protein_pc: document.getElementById('protein_pc').value || "",
+                    steps: document.getElementById('steps').value || "",
+                    libre: document.getElementById('libre').value || "",
+                    exercise: document.getElementById('exercise').value || ""
+                })
+            });
+
+            // 成功時の表示
+            document.getElementById('form').style.display = "none";
+            document.getElementById('after').style.display = "block";
+            setTimeout(() => liff.closeWindow(), 1500);
+
+        } catch (e) {
+            // エラー内容をアラートで出す（原因特定のため）
+            alert("エラー詳細: " + e.message);
+            btn.disabled = false;
+            btn.innerText = "記録を報告する";
+            document.getElementById('form').style.opacity = "1";
+        }
+    }
+</script>
 </body>
 </html>
