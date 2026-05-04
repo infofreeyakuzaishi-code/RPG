@@ -138,28 +138,14 @@
         }, 3000);
     }
 
-window.onload = async () => {
+    window.onload = async () => {
         startSlider();
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('item') || "lg-vw7k7t";
-        const userId = urlParams.get('userId'); // LIFF経由で渡される想定
-        
+        const id = new URLSearchParams(window.location.search).get('item') || "lg-vw7k7t";
         document.getElementById('display-id').innerText = id;
-
         try {
-            // 1. 設定情報を取得
-            const res = await fetch(`${GAS_URL}?type=getSettings&item=${id}&userId=${userId}`);
+            const res = await fetch(`${GAS_URL}?type=getSettings&item=${id}`);
             const data = await res.json();
-
-            // 2. 【追加】地域設定が空の場合の判定（GAS側の返却値に region を含める想定）
-            // もし地域が未設定（初回）なら、LINE公式アカウントの「スタート」フローへ誘導
-            if (userId && data.needsRegistration) {
-                sendToOA("スタート"); // GAS側で地域登録フローを開始させる
-                return;
-            }
-
-            // 3. ボタンの描画（既存ロジック）
-            data.settings.forEach((btn, i) => {
+            data.forEach((btn, i) => {
                 const el = document.getElementById(`slot-${i}`);
                 if (btn.name !== "未設定") {
                     el.querySelector('.label').innerHTML = `${btn.name}<div class="sub">飲んだらタップ</div>`;
@@ -169,11 +155,7 @@ window.onload = async () => {
                 }
                 el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
             });
-        } catch (e) {
-            console.error("データ取得エラー", e);
-        } finally { 
-            document.getElementById('loader').style.display = "none"; 
-        }
+        } finally { document.getElementById('loader').style.display = "none"; }
     };
 </script>
 </body>
