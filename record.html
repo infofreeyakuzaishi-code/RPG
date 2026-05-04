@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loggy-System</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #4a5568; }
+        .loader { text-align: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #764ba2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <div id="msg">データを送信中...</div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
+
+        async function main() {
+            await liff.init({ liffId: "2009859584-THwDZKBN" });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            
+            const profile = await liff.getProfile();
+            const params = new URLSearchParams(window.location.search);
+            const item = params.get('item');
+
+            if (item) {
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: JSON.stringify({ item: item, userId: profile.userId })
+                });
+                liff.closeWindow();
+            } else {
+                document.getElementById('msg').innerText = "アイテムIDが見つかりません";
+            }
+        }
+        main();
+    </script>
+</body>
+</html>
