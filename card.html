@@ -117,42 +117,36 @@
         }
     };
 
-    async function sendAction(type, name, itemId = "") {
-        const loader = document.getElementById('loading-overlay');
-        const text = document.getElementById('loading-text');
-        loader.style.display = 'flex';
-        loader.style.opacity = '1';
-        text.innerText = "ギルドへ報告中...";
+async function sendAction(type, name, itemId = "") {
+    const loader = document.getElementById('loading-overlay');
+    loader.style.display = 'flex';
+    loader.style.opacity = '1';
 
-        try {
-            const profile = await liff.getProfile();
+    try {
+        // 1. LINEのトーク画面に「😊」などの名前を送信する
+        if (liff.isInClient()) {
+            await liff.sendMessages([{
+                'type': 'text',
+                'text': name 
+            }]);
+            
+            // 2. 送信できたら画面を閉じる
+            liff.closeWindow();
+        } else {
+            // PCブラウザ等の場合は送信できないので、今まで通りGASを直接叩く
             await fetch(RPG_GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify({ 
-                    type: type, 
-                    userId: profile.userId, 
-                    itemId: itemId, 
-                    name: name 
-                })
+                body: JSON.stringify({ type: type, userId: profile.userId, name: name })
             });
-
-            text.innerText = "記録完了！";
-            
-            setTimeout(() => {
-                if (liff.isInClient()) {
-                    liff.closeWindow();
-                } else {
-                    loader.style.opacity = '0';
-                    setTimeout(() => { loader.style.display = 'none'; }, 500);
-                }
-            }, 1500);
-
-        } catch (e) {
-            alert("報告に失敗しました。");
-            loader.style.display = 'none';
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 500);
         }
+    } catch (e) {
+        alert("報告に失敗しました。");
+        loader.style.display = 'none';
     }
+}
 </script>
 </body>
 </html>
