@@ -69,15 +69,17 @@
         <h1>ろぎてむ/Loggy-System/</h1>
         
         <!-- ゲーミフィケーション要素 -->
-        <div class="status-row">
-            <div class="level-badge">Lv. <span id="lv-num">--</span></div>
-            <div class="rank-label" id="rank-name">読込中...</div>
+     <!-- Lv & 称号表示 -->
+<div class="status-row">
+    <div class="level-badge">Lv. <span id="lv-num">--</span></div>
+    <div class="rank-label">
+        <span id="rank-name">読込中...</span>
+        <!-- ここに地域と属性を追加 -->
+        <div style="font-size: 10px; opacity: 0.9; margin-top: 4px;">
+            <span id="user-area">--</span> / <span id="user-attr">--</span>
         </div>
-        <div class="exp-outer">
-            <div class="exp-inner" id="exp-bar-fill"></div>
-        </div>
-        <div class="exp-info">次まであと <span id="exp-next">--</span> exp</div>
     </div>
+</div>
 
     <!-- つかいかたガイド -->
     <div class="guide-box">
