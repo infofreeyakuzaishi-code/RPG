@@ -83,11 +83,23 @@
     function sendToOA(txt) { window.location.href = `https://line.me/R/oaMessage/@999aavtu/?${encodeURIComponent(txt)}`; }
 
     window.onload = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('item') || "rpg-X7M4Q9K2";
-        const userId = "USER_ID_PLACEHOLDER"; // 実際はLIFFから取得
-
         try {
+            // 1. LIFFの初期化
+            await liff.init({ liffId: "2009859584-THwDZKBN" });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
+
+            // 2. ユーザーIDの取得
+            const profile = await liff.getProfile();
+            const userId = profile.userId;
+
+            // 3. パラメータ（item）の取得
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('item') || "rpg-X7M4Q9K2";
+
+            // 4. GASからデータ取得
             const res = await fetch(`${GAS_URL}?type=getSettings&item=${id}&userId=${userId}`);
             const data = await res.json();
             
@@ -95,8 +107,12 @@
             const lv = data.level || 1;
             const exp = data.exp || 0;
             document.getElementById('lv-num').innerText = lv;
+            
+            // 次のレベルまでの必要経験値
             const nextExp = EXP_TABLE[lv] || "MAX";
             document.getElementById('exp-next').innerText = nextExp;
+            
+            // ゲージの計算（現在のレベルの底値を引いて計算するとより正確ですが、まずは簡易表示）
             const progress = nextExp === "MAX" ? 100 : (exp / nextExp) * 100;
             document.getElementById('exp-bar-fill').style.width = progress + "%";
             
@@ -114,8 +130,11 @@
                 }
                 el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
             });
-        } finally { document.getElementById('loader').style.display = "none"; }
+        } catch (err) {
+            console.error(err);
+            // エラー時もローダーを消す
+        } finally { 
+            document.getElementById('loader').style.display = "none"; 
+        }
     };
 </script>
-</body>
-</html>
