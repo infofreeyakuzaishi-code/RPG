@@ -205,22 +205,27 @@
             document.getElementById('exp-next').innerText = diff > 0 ? diff : 0;
             const progress = ((exp - prevExp) / (nextExp - prevExp)) * 100;
             document.getElementById('exp-bar-fill').style.width = Math.min(Math.max(progress, 0), 100) + "%";
+if (data.buttons) {
+    data.buttons.forEach((btn, idx) => {
+        const slot = document.getElementById(`slot-${idx}`);
+        if (slot && btn.id && btn.name !== "未設定") {
+            slot.querySelector('.label').innerText = btn.name;
 
-            // スロット（ボタン）の反映
-            if (data.buttons) {
-                data.buttons.forEach((btn, idx) => {
-                    const slot = document.getElementById(`slot-${idx}`);
-                    if (slot && btn.id && btn.name !== "未設定") {
-                        slot.querySelector('.label').innerText = btn.name;
-                        slot.onclick = () => sendToOA(`item=${btn.id}`);
-                        slot.style.opacity = "1";
-                    } else if (slot) {
-                        slot.querySelector('.label').innerText = "未設定";
-                        slot.style.opacity = "0.4";
-                        slot.onclick = null;
-                    }
-                });
-            }
+            // ★ここを修正：LIFF URL + パラメータ で開く
+            slot.onclick = () => {
+                // record.html用のLIFF URL（例）に、スプレッドシートから取得したIDを付ける
+                const liffUrl = `https://liff.line.me/2009859584-THwDZKBN?item=${btn.id}`;
+                window.location.href = liffUrl;
+            };
+
+            slot.style.opacity = "1";
+        } else if (slot) {
+            slot.querySelector('.label').innerText = "未設定";
+            slot.style.opacity = "0.4";
+            slot.onclick = null;
+        }
+    });
+}
 
         } catch (err) {
             console.error("Data Fetch Error:", err);
