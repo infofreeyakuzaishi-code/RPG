@@ -20,7 +20,6 @@
     </style>
 </head>
 <body>
-
 <div id="loading-overlay">
     <div id="msg">冒険の準備中...</div>
 </div>
@@ -30,15 +29,15 @@
     
     <div class="label-group">今の気分（宿屋で休息）</div>
     <div class="stamp-grid">
-        <button class="stamp-btn" onclick="execAction('😊')">😊</button>
-        <button class="stamp-btn" onclick="execAction('😑')">😑</button>
-        <button class="stamp-btn" onclick="execAction('😫')">😫</button>
-        <button class="stamp-btn" onclick="execAction('🤒')">🤒</button>
+        <button class="stamp-btn" onclick="execAction('😊', 'mood')">😊</button>
+        <button class="stamp-btn" onclick="execAction('😑', 'mood')">😑</button>
+        <button class="stamp-btn" onclick="execAction('😫', 'mood')">😫</button>
+        <button class="stamp-btn" onclick="execAction('🤒', 'mood')">🤒</button>
     </div>
 
     <div class="label-group">ポーション（サプリ・服薬）</div>
     <div id="potion-grid" class="potion-grid">
-        <div class="potion-item" onclick="execAction('記録')">
+        <div class="potion-item" onclick="execAction('記録', 'dose')">
             <div style="font-size:24px">🧪</div>
             <div id="item-display" style="font-size:12px">アイテムを記録</div>
         </div>
@@ -46,23 +45,19 @@
 </div>
 
 <script>
-    // ★うまくいっているコードの設定方法に統一★
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec"; 
-    const LIFF_URL = "https://liff.line.me/2009859584-THwDZKBN";
-
-    // LIFF_URLからIDだけを自動抽出
-    const MY_LIFF_ID = LIFF_URL.split('/').pop();
+    const LIFF_ID = "2009859584-THwDZKBN";
 
     async function main() {
         try {
-            await liff.init({ liffId: MY_LIFF_ID });
+            await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
             
-            // パラメータ取得
             const params = new URLSearchParams(window.location.search);
             const item = params.get('item');
             if (item) {
-                document.getElementById('item-display').innerText = "薬・サプリを記録";
+                // itemがある場合は「何のアイテムか」を表示（将来的にはGASから名前を引いてもOK）
+                document.getElementById('item-display').innerText = "ポーションを飲む";
             }
             
             document.getElementById('loading-overlay').style.display = 'none';
@@ -71,35 +66,46 @@
         }
     }
 
-    async function execAction(actionName) {
+    async function execAction(actionName, actionType) {
         document.getElementById('loading-overlay').style.display = 'flex';
-        document.getElementById('msg').innerText = "データを送信中...";
+        document.getElementById('msg').innerHTML = "冒険の記録を<br>書き留めています...";
 
         try {
             const profile = await liff.getProfile();
             const params = new URLSearchParams(window.location.search);
             const item = params.get('item');
 
-            // 成功しているコードと全く同じfetch処理
+            // GAS側へ送るデータを整形
+            const payload = {
+                type: "dose_record", // 記録として統一
+                userId: profile.userId,
+                item: item || actionName, // ボタンIDがあれば優先
+                name: actionName,
+                action_type: actionType // mood か dose か
+            };
+
             await fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify({ 
-                    item: item || actionName,
-                    userId: profile.userId,
-                    name: actionName 
-                })
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
             });
 
-            // 成功コードの肝：即座に閉じる（余計なURL移動をさせない）
-            if (liff.isInClient()) {
-                liff.closeWindow();
-            } else {
-                alert("記録しました！");
-                document.getElementById('loading-overlay').style.display = 'none';
-            }
+            // 成功時の演出
+            document.getElementById('msg').innerHTML = "✅ 記録完了！<br>経験値を獲得しました";
+
+            setTimeout(() => {
+                if (liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    alert("冒険の記録を保存しました！");
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }
+            }, 1500);
+
         } catch (e) {
-            alert("送信エラー");
+            console.error(e);
+            alert("通信エラー：セーブに失敗しました");
             document.getElementById('loading-overlay').style.display = 'none';
         }
     }
