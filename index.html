@@ -20,19 +20,19 @@
         .rank-label { font-size: 14px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
         /* 経験値ゲージ */
-        .exp-outer { width: 80%; background: rgba(255,255,255,0.2); height: 8px; border-radius: 4px; margin: 0 auto 5px; overflow: hidden; }
+        .exp-outer { width: 80%; background: rgba(255,255,255,0.2); height: 8px; border-radius: 4px; margin: 10px auto 5px; overflow: hidden; }
         .exp-inner { width: 0%; height: 100%; background: #48bb78; transition: width 1s ease-out; }
-        .exp-info { font-size: 10px; opacity: 0.8; }
+        .exp-info { font-size: 10px; opacity: 0.8; margin-bottom: 5px; }
 
         /* ガイドセクション */
         .guide-box { background: #ffffff; margin: 20px; padding: 20px; border-radius: 20px; box-shadow: inset 0 0 0 1px #eef2ff, 0 4px 12px rgba(0,0,0,0.03); border-left: 6px solid #667eea; }
         .guide-title { font-size: 14px; font-weight: bold; color: #667eea; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
         .guide-item { display: flex; align-items: flex-start; margin-bottom: 12px; }
         .guide-num { background: #eef2ff; color: #667eea; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px; flex-shrink: 0; margin-top: 2px; }
-        .guide-text { font-size: 12.5px; color: #4a5568; line-height: 1.6; }
+        .guide-text { font-size: 12.5px; color: #4a5568; line-height: 1.6; text-align: left; }
         .guide-text b { color: #2d3748; }
 
-        .section-title { font-size: 11px; font-weight: bold; color: #a0aec0; margin: 25px 20px 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .section-title { font-size: 11px; font-weight: bold; color: #a0aec0; margin: 25px 20px 10px; text-transform: uppercase; letter-spacing: 1px; text-align: left; }
         
         .stamp-grid { display: flex; justify-content: space-around; padding: 0 20px; gap: 10px; margin-bottom: 15px; }
         .stamp-btn { background: white; border: 1px solid #e2e8f0; border-radius: 16px; flex: 1; padding: 12px 0; font-size: 26px; cursor: pointer; transition: 0.2s; }
@@ -42,7 +42,7 @@
         .action-btn:active { background: #f0f4ff; transform: translateY(1px); }
 
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; }
-        .menu-item { background: white; border: 2px solid #f0f4f8; border-radius: 20px; padding: 25px 10px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .menu-item { background: white; border: 2px solid #f0f4f8; border-radius: 20px; padding: 25px 10px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; }
         .menu-item:active { border-color: #667eea; transform: translateY(2px); }
         .icon { font-size: 32px; margin-bottom: 10px; }
         .label { font-size: 14px; font-weight: bold; color: #2d3748; }
@@ -68,18 +68,22 @@
     <div class="header">
         <h1>ろぎてむ/Loggy-System/</h1>
         
-        <!-- ゲーミフィケーション要素 -->
-     <!-- Lv & 称号表示 -->
-<div class="status-row">
-    <div class="level-badge">Lv. <span id="lv-num">--</span></div>
-    <div class="rank-label">
-        <span id="rank-name">読込中...</span>
-        <!-- ここに地域と属性を追加 -->
-        <div style="font-size: 10px; opacity: 0.9; margin-top: 4px;">
-            <span id="user-area">--</span> / <span id="user-attr">--</span>
+        <div class="status-row">
+            <div class="level-badge">Lv. <span id="lv-num">--</span></div>
+            <div class="rank-label">
+                <span id="rank-name">読込中...</span>
+                <div style="font-size: 10px; opacity: 0.9; margin-top: 4px;">
+                    <span id="user-area">--</span> / <span id="user-attr">--</span>
+                </div>
+            </div>
         </div>
+
+        <!-- 経験値ゲージ表示エリア -->
+        <div class="exp-outer">
+            <div id="exp-bar-fill" class="exp-inner"></div>
+        </div>
+        <div class="exp-info">次まであと <span id="exp-next">--</span> EXP</div>
     </div>
-</div>
 
     <!-- つかいかたガイド -->
     <div class="guide-box">
@@ -156,55 +160,58 @@
     window.onload = async () => {
         startSlider();
         
-        // 1. LIFF初期化 & ユーザーID取得
         try {
-            await liff.init({ liffId: "2009859584-THwDZKBN" }); // あなたのLIFF IDに変更してください
+            await liff.init({ liffId: "2009859584-THwDZKBN" });
             let userId = "guest_user";
             if (liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
                 userId = profile.userId;
             }
 
-            // 2. URLパラメータ取得
             const urlParams = new URLSearchParams(window.location.search);
             const itemId = urlParams.get('item') || "lg-vw7k7t";
 
-            // 3. GASからデータ一括取得 (ゲーミフィケーション + スロット設定)
+            // GASからデータ一括取得
             const res = await fetch(`${GAS_URL}?type=getSettings&item=${itemId}&userId=${userId}`);
             const data = await res.json();
 
-            // 4. ステータス反映
+            // 1. ステータス・経験値の反映
             const lv = data.level || 1;
             const exp = data.exp || 0;
-            const nextExp = EXP_TABLE[lv] || "MAX";
+            const nextExp = EXP_TABLE[lv] || 9999; // 次のレベルに必要な累積EXP
+            const prevExp = EXP_TABLE[lv-1] || 0;  // 現在のレベルに到達した時の累積EXP
             
             document.getElementById('lv-num').innerText = lv;
-            document.getElementById('rank-name').innerText = RANKS[Math.min(lv, RANKS.length - 1)];
-
+            document.getElementById('rank-name').innerText = RANKS[Math.min(lv-1, RANKS.length - 1)];
             document.getElementById('user-area').innerText = data.area || "未設定";
-document.getElementById('user-attr').innerText = data.attr || "未設定";
+            document.getElementById('user-attr').innerText = data.attr || "未設定";
             
-            document.getElementById('exp-next').innerText = nextExp === "MAX" ? 0 : (nextExp - exp);
+            // あと何EXPかの計算
+            const diff = nextExp - exp;
+            document.getElementById('exp-next').innerText = diff > 0 ? diff : 0;
             
-            const progress = nextExp === "MAX" ? 100 : (exp / nextExp) * 100;
-            document.getElementById('exp-bar-fill').style.width = progress + "%";
+            // ゲージの割合計算 (現在のLv内での進捗)
+            const progress = ((exp - prevExp) / (nextExp - prevExp)) * 100;
+            document.getElementById('exp-bar-fill').style.width = Math.min(Math.max(progress, 0), 100) + "%";
 
-            // 5. スロット反映
+            // 2. スロット反映
             data.buttons.forEach((btn, i) => {
                 const el = document.getElementById(`slot-${i}`);
                 if (!el) return;
-                if (btn.name !== "未設定") {
+                
+                if (btn.id && btn.name !== "未設定") {
                     el.querySelector('.label').innerHTML = `${btn.name}<div class="sub">飲んだらタップ</div>`;
                     el.style.opacity = "1";
+                    el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
                 } else {
                     el.querySelector('.label').innerText = "＋新規登録";
                     el.style.opacity = "0.5";
+                    el.onclick = () => { /* 新規登録ロジックがあればここへ */ };
                 }
-                el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
             });
 
         } catch (err) {
-            console.error(err);
+            console.error("Error:", err);
         } finally {
             document.getElementById('loader').style.display = "none";
         }
