@@ -3,159 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ろぎてむ RPG Edition</title>
+    <title>Logy RPG</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f9; margin: 0; display: flex; justify-content: center; min-height: 100vh; padding-top: 20px; }
-        .card { background: white; width: 92%; max-width: 420px; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; position: relative; padding-bottom: 30px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 22px; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .card {
+            background-color: #fff;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .level-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .rank-name {
+            font-size: 1.2em;
+            color: #333;
+            font-weight: bold;
+        }
+        .exp-container {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .exp-bar {
+            width: 100%;
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .exp-fill {
+            width: 0%;
+            height: 100%;
+            background: #4caf50;
+            transition: width 0.5s ease;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .slot {
+            background-color: #f8f9fa;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            padding: 20px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .slot:active { transform: scale(0.95); }
+        .label { font-weight: bold; color: #555; }
+        .sub { font-size: 0.7em; color: #888; margin-top: 4px; }
         
-        /* ステータス表示 */
-        .status-box { background: rgba(255,255,255,0.15); border-radius: 15px; padding: 10px; margin-top: 15px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); }
-        .rank-badge { font-size: 11px; background: #feb47b; color: #764ba2; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
-        .level-val { font-size: 24px; font-weight: 900; margin-left: 5px; }
-        .exp-bar-bg { background: rgba(0,0,0,0.2); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; }
-        #exp-bar-fill { background: #48bb78; height: 100%; width: 0%; transition: width 1s ease-out; }
-
-        .guide-box { background: #ffffff; margin: 15px; padding: 15px; border-radius: 20px; border-left: 5px solid #667eea; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-        .guide-text { font-size: 12px; color: #4a5568; line-height: 1.5; }
-        
-        .section-title { font-size: 11px; font-weight: bold; color: #a0aec0; margin: 20px 20px 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .stamp-grid { display: flex; justify-content: space-around; padding: 0 20px; gap: 8px; }
-        .stamp-btn { background: white; border: 1px solid #e2e8f0; border-radius: 14px; flex: 1; padding: 10px 0; font-size: 24px; cursor: pointer; transition: 0.2s; }
-        .stamp-btn:active { transform: scale(1.2); }
-
-        .action-btn { width: calc(100% - 40px); margin: 0 20px 8px; padding: 14px; border-radius: 16px; border: 1.5px solid #667eea; background: #fff; color: #667eea; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
-
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
-        .menu-item { background: white; border: 2px solid #f0f4f8; border-radius: 18px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .menu-item:active { border-color: #667eea; background: #f8faff; }
-        .icon { font-size: 28px; margin-bottom: 5px; }
-        .label { font-size: 13px; font-weight: bold; color: #2d3748; }
-        .sub { font-size: 9px; color: #a0aec0; }
-
-        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #667eea; }
+        #loader {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            z-index: 10;
+            font-weight: bold;
+            color: #764ba2;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div id="loader">Loading...</div>
-    <div class="header">
-        <h1>ろぎてむ管理カード</h1>
-        <div class="status-box">
-            <div><span class="rank-badge" id="rank-name">見習い</span><span class="level-val">Lv.<span id="lv-num">1</span></span></div>
-            <div class="exp-bar-bg"><div id="exp-bar-fill"></div></div>
-            <div style="font-size: 9px; margin-top: 4px; opacity: 0.8;">NEXT EXP: <span id="exp-next">--</span></div>
+
+    <div class="status-header">
+        <div class="level-badge">Lv. <span id="lv-num">--</span></div>
+        <div class="rank-name" id="rank-name">読み込み中...</div>
+    </div>
+
+    <div class="exp-container">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666;">
+            <span>経験値</span>
+            <span>Next: <span id="exp-next">--</span></span>
         </div>
+        <div class="exp-bar"><div class="exp-fill" id="exp-bar-fill"></div></div>
     </div>
 
-    <div class="guide-box">
-        <div class="guide-text">💊 記録するたびに<b>経験値(EXP)</b>が貯まり、レベルが上がります！目指せ「薬神」！</div>
-    </div>
-
-    <div class="section-title">今の体調 (EXP+5)</div>
-    <div class="stamp-grid">
-        <button class="stamp-btn" onclick="sendToOA('😊')">😊</button>
-        <button class="stamp-btn" onclick="sendToOA('😑')">😑</button>
-        <button class="stamp-btn" onclick="sendToOA('😫')">😫</button>
-        <button class="stamp-btn" onclick="sendToOA('🤒')">🤒</button>
-    </div>
-    
-    <div class="section-title">各種メニュー</div>
-    <button class="action-btn" onclick="location.href='vital.html'">⚖️ 身体データ入力 (EXP+30)</button>
-    <button class="action-btn" onclick="location.href='https://liff.line.me/2009859584-THwDZKBN'">📅 服薬カレンダーを表示</button>
-
-    <div class="section-title">服薬記録 (EXP+10)</div>
-    <div class="menu-grid" id="grid">
-        <div id="slot-0" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
-        <div id="slot-1" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
-        <div id="slot-2" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
-        <div id="slot-3" class="menu-item"><div class="icon">💊</div><div class="label">読込中</div></div>
+    <div class="grid">
+        <div class="slot" id="slot-0"><div class="label">読み込み中...</div></div>
+        <div class="slot" id="slot-1"><div class="label">読み込み中...</div></div>
+        <div class="slot" id="slot-2"><div class="label">読み込み中...</div></div>
+        <div class="slot" id="slot-3"><div class="label">読み込み中...</div></div>
     </div>
 </div>
 
 <script>
+    // 1. 設定情報
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec"; 
     const LIFF_URL = "https://liff.line.me/2009859584-THwDZKBN";
     const EXP_TABLE = [0, 30, 100, 250, 500, 850, 1300, 2000, 3000, 5000];
 
-    function sendToOA(txt) { window.location.href = `https://line.me/R/oaMessage/@999aavtu/?${encodeURIComponent(txt)}`; }
+    window.onload = async () => {
+        try {
+            // LIFFの初期化
+            await liff.init({ liffId: "2009859584-THwDZKBN" });
 
-   // --- index.html の script 部分を差し替え ---
-window.onload = async () => {
-    try {
-        await liff.init({ liffId: "2009859584-THwDZKBN" });
-        
-        let userId = "guest_user"; // デフォルト値
-        
-        if (liff.isLoggedIn()) {
-            const profile = await liff.getProfile();
-            userId = profile.userId;
-        } else {
-            // LINEアプリ以外で開いた場合、ログインを促すか、ゲストとして表示
-            console.log("Not logged in");
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('item') || "rpg-X7M4Q9K2";
-
-        // GASへの問い合わせ（userIdを正しく渡す）
-        const res = await fetch(`${GAS_URL}?type=getSettings&item=${id}&userId=${userId}`);
-        const data = await res.json();
-        
-        // ステータス反映（既存の処理）
-        updateStatusDisplay(data); 
-
-        // ボタン反映
-        data.buttons.forEach((btn, i) => {
-            const el = document.getElementById(`slot-${i}`);
-            if (btn && btn.name !== "未設定") {
-                el.querySelector('.label').innerHTML = `${btn.name}<div class="sub">タップで記録</div>`;
-                el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
-            } else {
-                el.querySelector('.label').innerText = "＋新規登録";
-                el.style.opacity = "0.5";
-                el.onclick = () => { alert("NFCタグから登録してください"); };
+            // ユーザーIDの取得（ログインしてなければゲスト扱い）
+            let userId = "guest_user";
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                userId = profile.userId;
             }
-        });
 
-    } catch (err) {
-        console.error("Fetch Error:", err);
-        document.getElementById('loader').innerText = "通信エラーが発生しました";
-    } finally {
-        document.getElementById('loader').style.display = "none";
-    }
-};
+            // URLからアイテムIDを取得
+            const urlParams = new URLSearchParams(window.location.search);
+            const itemId = urlParams.get('item') || "rpg-X7M4Q9K2";
 
-// 表示処理を関数として外に出すと管理が楽です
-function updateStatusDisplay(data) {
-    const lv = data.level || 1;
-    const exp = data.exp || 0;
-    document.getElementById('lv-num').innerText = lv;
-    const nextExp = EXP_TABLE[lv] || "MAX";
-    document.getElementById('exp-next').innerText = nextExp;
-    const progress = nextExp === "MAX" ? 100 : (exp / nextExp) * 100;
-    document.getElementById('exp-bar-fill').style.width = progress + "%";
-    const ranks = ["見習い", "見習い", "初級冒険者", "中級薬師", "上級薬師", "賢者", "名医", "大賢者", "英雄", "薬神"];
-    document.getElementById('rank-name').innerText = ranks[lv] || "薬神";
-}
-            // ボタン反映
+            // GASからデータを取得
+            const response = await fetch(`${GAS_URL}?type=getSettings&item=${itemId}&userId=${userId}`);
+            const data = await response.json();
+
+            // ステータスの反映
+            const lv = data.level || 1;
+            const exp = data.exp || 0;
+            document.getElementById('lv-num').innerText = lv;
+            
+            const nextExp = EXP_TABLE[lv] || "MAX";
+            document.getElementById('exp-next').innerText = nextExp;
+
+            const progress = (nextExp === "MAX") ? 100 : (exp / nextExp) * 100;
+            document.getElementById('exp-bar-fill').style.width = progress + "%";
+
+            const ranks = ["見習い", "見習い", "初級冒険者", "中級薬師", "上級薬師", "賢者", "名医", "大賢者", "英雄", "薬神"];
+            document.getElementById('rank-name').innerText = ranks[lv] || "薬神";
+
+            // ボタン（スロット）の反映
             data.buttons.forEach((btn, i) => {
-                const el = document.getElementById(`slot-${i}`);
-                if (btn.name !== "未設定") {
-                    el.querySelector('.label').innerHTML = `${btn.name}<div class="sub">タップで記録</div>`;
-                } else {
-                    el.querySelector('.label').innerText = "＋新規登録";
-                    el.style.opacity = "0.5";
+                const slotEl = document.getElementById(`slot-${i}`);
+                if (slotEl) {
+                    if (btn && btn.name !== "未設定") {
+                        slotEl.querySelector('.label').innerHTML = `${btn.name}<div class="sub">タップで記録</div>`;
+                        slotEl.style.opacity = "1";
+                        slotEl.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
+                    } else {
+                        slotEl.querySelector('.label').innerText = "＋新規登録";
+                        slotEl.style.opacity = "0.5";
+                        slotEl.onclick = () => { alert("NFCタグをかざして登録してください"); };
+                    }
                 }
-                el.onclick = () => { window.location.href = `${LIFF_URL}?item=${btn.id}`; };
             });
-        } catch (err) {
-            console.error(err);
-            // エラー時もローダーを消す
-        } finally { 
-            document.getElementById('loader').style.display = "none"; 
+
+        } catch (error) {
+            console.error("エラー詳細:", error);
+            // エラー時も最低限の表示を行う
+            document.getElementById('rank-name').innerText = "エラー";
+        } finally {
+            // 成功・失敗に関わらずLoadingを消す
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = "none";
         }
     };
 </script>
+
+</body>
+</html>
