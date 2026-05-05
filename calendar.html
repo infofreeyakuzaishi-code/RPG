@@ -3,59 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>服薬カレンダー</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .calendar-card { background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 350px; padding: 20px; }
-        .status-badge { font-size: 1.1em; font-weight: bold; padding: 15p<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>身体データ・究極ログ</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --main-grad: linear-gradient(135deg, #68d391 0%, #4fd1c5 100%); --bg: #f0f4f8; --text: #2d3748; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; color: var(--text); }
-        .card { background: white; width: 100%; max-width: 420px; border-radius: 35px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 97vh; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; color: var(--text); }
+        .card { background: white; width: 100%; max-width: 420px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 20px; }
         
-        .header { background: var(--main-grad); color: white; padding: 20px 15px; text-align: center; flex-shrink: 0; }
-        .header h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 1px; }
-        .header p { margin: 4px 0 0; font-size: 11px; opacity: 0.9; }
+        .header { background: var(--main-grad); color: white; padding: 20px 15px; text-align: center; }
+        .header h1 { margin: 0; font-size: 19px; font-weight: 800; }
 
-        /* 上部4項目グリッド（復活） */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #fff; border-bottom: 1px solid #f0f4f8; }
-        .stat-card { background: #f8fafc; padding: 12px; border-radius: 20px; text-align: center; border: 1px solid #edf2f7; }
-        .stat-label { font-size: 10px; color: #64748b; margin-bottom: 2px; }
-        .stat-value { font-size: 18px; font-weight: 800; color: #2d3748; }
-        .stat-unit { font-size: 10px; margin-left: 2px; color: #94a3b8; }
+        /* カレンダー部分 */
+        .calendar-section { padding: 15px; border-bottom: 1px solid #edf2f7; }
+        .status-badge { font-size: 0.9em; font-weight: bold; padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: center; border: 2px solid #e2e8f0; }
+        .checked { border-color: #38b2ac; background-color: #e6fffa; color: #234e52; }
+        .unchecked { border-color: #feb2b2; background-color: #fff5f5; color: #9b2c2c; }
 
-        .history-section { flex-grow: 1; overflow-y: auto; padding: 10px 15px 25px; background: #fff; }
-        .history-title { font-size: 14px; font-weight: bold; padding: 5px 5px 15px; color: #475569; display: flex; align-items: center; gap: 8px; }
-        
-        .history-card { background: white; border: 1px solid #f1f5f9; border-radius: 24px; padding: 15px; margin-bottom: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .date-badge { font-size: 11px; font-weight: 700; color: #94a3b8; }
-        .index-badge { font-size: 9px; background: #e6fffa; color: #319795; padding: 3px 12px; border-radius: 12px; font-weight: bold; border: 1px solid #b2f5ea; }
-        
-        .data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 10px 0; }
-        .data-item { text-align: center; }
-        .d-label { font-size: 9px; color: #94a3b8; display: block; margin-bottom: 2px; }
-        .d-val { font-size: 13px; font-weight: 700; color: #475569; }
-        .d-unit { font-size: 9px; color: #cbd5e0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .day-label { font-size: 0.7em; color: #718096; text-align: center; font-weight: bold; }
+        .date-cell { position: relative; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85em; background: #f8fafc; border: 1px solid transparent; }
+        .today { border: 2px solid #4fd1c5; font-weight: bold; color: #2c7a7b; }
+        .stamp { position: absolute; font-size: 1.1em; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.9; }
 
-        .extra-row { display: flex; gap: 8px; margin-top: 10px; }
-        .pill { flex: 1; padding: 6px 10px; border-radius: 12px; font-size: 10px; display: flex; justify-content: space-between; border: 1px solid transparent; }
-        .pill-libre { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
-        .pill-blood { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        /* 履歴タイムライン */
+        .history-section { width: 100%; max-width: 420px; padding-bottom: 30px; }
+        .history-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 12px; border: 1px solid #f1f5f9; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .history-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 8px; }
+        .data-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .data-pill { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 11px; color: #475569; }
+        .memo-box { margin-top: 8px; font-size: 12px; color: #718096; background: #fffaf0; padding: 8px; border-radius: 8px; }
 
-        .report-box { margin-top: 12px; background: #fffaf0; border-radius: 15px; padding: 10px 12px; border: 1px solid #fef3c7; }
-        .report-text { font-size: 11px; color: #92400e; line-height: 1.5; font-weight: 500; }
-
-        #loader { padding: 80px 20px; text-align: center; color: #4fd1c5; }
-        .spinner { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #4fd1c5; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loader { padding: 50px; text-align: center; color: #4fd1c5; }
     </style>
 </head>
 <body>
@@ -63,24 +41,19 @@
 <div class="card">
     <div class="header">
         <h1>📊 身体データ究極ログ</h1>
-        <p id="user-display-name">同期中...</p>
     </div>
 
-    <div id="loader"><div class="spinner"></div><p>データを取得中...</p></div>
-
-    <div id="content" style="display:none;">
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">最新体重</div><div class="stat-value" id="val-weight">--</div><span class="stat-unit">kg</span></div>
-            <div class="stat-card"><div class="stat-label">体脂肪率</div><div class="stat-value" id="val-fat">--</div><span class="stat-unit">%</span></div>
-            <div class="stat-card"><div class="stat-label">体脂肪量</div><div class="stat-value" id="val-fatkg">--</div><span class="stat-unit">kg</span></div>
-            <div class="stat-card"><div class="stat-label">筋肉量</div><div class="stat-value" id="val-muscle">--</div><span class="stat-unit">kg</span></div>
-        </div>
-
-        <div class="history-section">
-            <div class="history-title">🕒 タイムライン履歴</div>
-            <div id="history-list"></div>
+    <div class="calendar-section">
+        <h3 id="month-title" style="text-align: center; font-size: 16px; margin: 0 0 10px;">--年 --月</h3>
+        <div id="status-badge" class="status-badge">読み込み中...</div>
+        <div class="calendar-grid" id="calendar-grid">
+            <div class="day-label">日</div><div class="day-label">月</div><div class="day-label">火</div><div class="day-label">水</div><div class="day-label">木</div><div class="day-label">金</div><div class="day-label">土</div>
         </div>
     </div>
+</div>
+
+<div class="history-section" id="history-list">
+    <div id="loader">データを取得中...</div>
 </div>
 
 <script>
@@ -92,144 +65,86 @@
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
             const profile = await liff.getProfile();
-            document.getElementById('user-display-name').innerText = profile.displayName + " さんの身体ログ";
-
-            const response = await fetch(`${GAS_URL}?type=getVitalData&userId=${profile.userId}`);
-            const data = await response.json();
-
-            if (data && data.length > 0) {
-                // ① 最新4項目の反映
-                const L = data[0];
-                document.getElementById('val-weight').innerText = L.weight || '--';
-                document.getElementById('val-fat').innerText = L.fat_pc || '--';
-                document.getElementById('val-fatkg').innerText = L.fat_kg || '--';
-                document.getElementById('val-muscle').innerText = L.muscle || '--';
-
-                // ② タイムラインの作成
-                const listElem = document.getElementById('history-list');
-                listElem.innerHTML = data.map((item, index) => {
-                    // スプレッドシートのカラム名（GAS側のキー）に合わせる
-                    const steps = item.steps || '--';
-                    const fat = item.fat_pc || '--';
-                    const water = item.water_pc || '--';
-                    const protein = item.protein_pc || '--';
-                    const libre = item.libre || '--';
-                    const blood = item.blood || '--';
-                    const report = item.report || item.exercise || item.memo || ""; 
-
-                    return `
-                        <div class="history-card">
-                            <div class="history-header">
-                                <span class="date-badge">📅 ${item.date}</span>
-                                <span class="index-badge">ENTRY #${data.length - index}</span>
-                            </div>
-                            <div class="data-grid">
-                                <div class="data-item"><span class="d-label">体重</span><span class="d-val">${item.weight || '--'}<span class="d-unit">kg</span></span></div>
-                                <div class="data-item"><span class="d-label">体脂肪</span><span class="d-val">${fat}<span class="d-unit">%</span></span></div>
-                                <div class="data-item"><span class="d-label">筋肉量</span><span class="d-val">${item.muscle || '--'}<span class="d-unit">kg</span></span></div>
-                                <div class="data-item"><span class="d-label">水分</span><span class="d-val">${water}<span class="d-unit">%</span></span></div>
-                                <div class="data-item"><span class="d-label">たんぱく</span><span class="d-val">${protein}<span class="d-unit">%</span></span></div>
-                                <div class="data-item"><span class="d-label">歩数</span><span class="d-val" style="color:#2b6cb0;">${steps}<span class="d-unit">歩</span></span></div>
-                            </div>
-                            <div class="extra-row">
-                                <div class="pill pill-libre"><b>リブレ</b><span>${libre}</span></div>
-                                <div class="pill pill-blood"><b>血液</b><span>${blood}</span></div>
-                            </div>
-                            ${report ? `<div class="report-box"><div class="report-text">${report}</div></div>` : ''}
-                        </div>
-                    `;
-                }).join('');
-
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-            }
-        } catch (e) { document.getElementById('loader').innerText = "エラー: " + e; }
-    }
-    window.onload = init;
-</script>
-</body>
-</html>x; border-radius: 10px; margin-bottom: 20px; text-align: center; min-height: 3em; display: flex; align-items: center; justify-content: center; border: 2px solid #3182ce; }
-        .checked { border: 2px solid #38b2ac; background-color: #e6fffa; color: #234e52; }
-        .unchecked { border: 2px solid #feb2b2; background-color: #fff5f5; color: #9b2c2c; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
-        .day-label { font-size: 0.8em; color: #718096; text-align: center; }
-        .date-cell { position: relative; height: 45px; border: 1px solid #edf2f7; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; background: #fff; }
-        .today { border: 2px solid #3182ce; font-weight: bold; }
-        .stamp { position: absolute; font-size: 1.2em; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.8; }
-    </style>
-</head>
-<body>
-    <div class="calendar-card">
-        <h2 id="month-title" style="text-align: center;">--年 --月</h2>
-        <div id="status-badge" class="status-badge">読み込み中...</div>
-        <div class="calendar-grid" id="calendar-grid">
-            <div class="day-label">日</div><div class="day-label">月</div><div class="day-label">火</div><div class="day-label">水</div><div class="day-label">木</div><div class="day-label">金</div><div class="day-label">土</div>
-        </div>
-    </div>
-    <div id="history-list" style="width:100%; max-width:350px; margin-top:20px;"></div>
-
-    <script>
-        const LIFF_ID = "2009771327-ZlTtzNT6"; 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbz_ulkMQbEh0DPGJtBi94sUsN4BnJmXVJU9zTdA_t8Cp3L1tPBc3k2Y3tigHdv-Es_G/exec";
-
-        async function init() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-                const profile = await liff.getProfile();
-                
-                // データ取得
-                const response = await fetch(`${GAS_URL}?userId=${profile.userId}`);
-                const data = await response.json();
-
-                // 描画
-                renderCalendar(data.calendar || []);
-                renderHistory(data.history || []);
-            } catch (error) {
-                document.getElementById('status-badge').innerText = "エラーが発生しました";
-            }
-        }
-
-        function renderCalendar(completedDates) {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
-            const todayStr = `${year}-${("0" + (month + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)}`;
             
-            document.getElementById('month-title').innerText = `${year}年 ${month + 1}月`;
-            const badge = document.getElementById('status-badge');
+            // GASからバイタル履歴と服薬履歴をまとめて取得
+            const res = await fetch(`${GAS_URL}?type=getVitalData&userId=${profile.userId}`);
+            const data = await res.json();
 
-            // --- 称賛メッセージの設定（安全な方法） ---
-            if (completedDates.includes(todayStr)) {
-                const msgs = ["✨ 完璧！今日もバッチリ！", "🎉 さすが！健康貯金UP！", "💪 ナイス！継続は力なり！", "💮 お見事！自分を褒めて！"];
-                badge.innerText = msgs[now.getDate() % msgs.length];
-                badge.className = "status-badge checked";
-            } else {
-                badge.innerText = "🥤 今日も忘れずに飲みましょう！";
-                badge.className = "status-badge unchecked";
-            }
+            // 1. カレンダーの描画（日付リストを抽出）
+            const completedDates = data.map(item => item.date);
+            renderCalendar(completedDates);
 
-            const grid = document.getElementById('calendar-grid');
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+            // 2. タイムラインの描画
+            renderHistory(data);
 
-            // 既存の曜日ラベルを残して日付を追加
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="date-cell" style="border:none;"></div>`;
-            for (let date = 1; date <= lastDate; date++) {
-                const dateStr = `${year}-${("0" + (month + 1)).slice(-2)}-${("0" + date).slice(-2)}`;
-                const isToday = dateStr === todayStr ? 'today' : '';
-                const hasStamp = completedDates.includes(dateStr) ? '<span class="stamp">✅</span>' : '';
-                grid.innerHTML += `<div class="date-cell ${isToday}">${date}${hasStamp}</div>`;
-            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById('loader').innerText = "データの取得に失敗しました";
+        }
+    }
+
+    function renderCalendar(completedDates) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const todayStr = `${year}-${("0" + (month + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)}`;
+        
+        document.getElementById('month-title').innerText = `${year}年 ${month + 1}月`;
+        const badge = document.getElementById('status-badge');
+
+        if (completedDates.includes(todayStr)) {
+            badge.innerText = "✨ 本日の記録完了！ナイス継続！";
+            badge.className = "status-badge checked";
+        } else {
+            badge.innerText = "🥤 本日のデータを記録しましょう！";
+            badge.className = "status-badge unchecked";
         }
 
-        function renderHistory(history) {
-            const list = document.getElementById('history-list');
-            list.innerHTML = "<h3>📝 最近の記録</h3>" + 
-                history.map(h => `<div style="background:white; padding:10px; margin-bottom:5px; border-radius:5px; font-size:0.9em; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">${h}</div>`).join('');
+        const grid = document.getElementById('calendar-grid');
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+
+        // 空白
+        for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="date-cell"></div>`;
+        // 日付
+        for (let date = 1; date <= lastDate; date++) {
+            const dateStr = `${year}-${("0" + (month + 1)).slice(-2)}-${("0" + date).slice(-2)}`;
+            const isToday = dateStr === todayStr ? 'today' : '';
+            const hasStamp = completedDates.includes(dateStr) ? '<span class="stamp">✅</span>' : '';
+            grid.innerHTML += `<div class="date-cell ${isToday}">${date}${hasStamp}</div>`;
+        }
+    }
+
+    function renderHistory(data) {
+        const list = document.getElementById('history-list');
+        if (!data || data.length === 0) {
+            list.innerHTML = "<p style='text-align:center; color:#94a3b8;'>履歴がまだありません</p>";
+            return;
         }
 
-        init();
-    </script>
+        list.innerHTML = data.map(item => `
+            <div class="history-card">
+                <div class="history-header">
+                    <span>📅 ${item.date}</span>
+                    <span style="color:#4fd1c5">RECORDS</span>
+                </div>
+                <div class="data-row">
+                    ${item.weight ? `<div class="data-pill">体重: ${item.weight}kg</div>` : ''}
+                    ${item.fat_pc ? `<div class="data-pill">体脂肪: ${item.fat_pc}%</div>` : ''}
+                    ${item.steps ? `<div class="data-pill">歩数: ${item.steps}歩</div>` : ''}
+                    ${item.libre ? `<div class="data-pill">リブレ: ${item.libre}</div>` : ''}
+                </div>
+                ${(item.exercise || item.blood) ? `
+                    <div class="memo-box">
+                        ${item.exercise ? `<div>🏃 ${item.exercise}</div>` : ''}
+                        ${item.blood ? `<div>🩸 ${item.blood}</div>` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    init();
+</script>
 </body>
 </html>
