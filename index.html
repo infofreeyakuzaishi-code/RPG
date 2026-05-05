@@ -180,6 +180,10 @@
             
             document.getElementById('lv-num').innerText = lv;
             document.getElementById('rank-name').innerText = RANKS[Math.min(lv, RANKS.length - 1)];
+
+            document.getElementById('user-area').innerText = data.area || "未設定";
+document.getElementById('user-attr').innerText = data.attr || "未設定";
+            
             document.getElementById('exp-next').innerText = nextExp === "MAX" ? 0 : (nextExp - exp);
             
             const progress = nextExp === "MAX" ? 100 : (exp / nextExp) * 100;
