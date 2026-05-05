@@ -3,41 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loggy-System</title>
+    <title>Loggy-System | 記録中</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #4a5568; }
-        .loader { text-align: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #764ba2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f4f7f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #4a5568; }
+        .loader { text-align: center; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 80%; max-width: 300px; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f0f4f8; border-top: 5px solid #764ba2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #msg { font-size: 16px; font-weight: bold; color: #2d3748; }
+        #sub-msg { font-size: 12px; color: #a0aec0; margin-top: 10px; }
+        .success-icon { font-size: 50px; color: #48bb78; display: none; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="loader">
-        <div class="spinner"></div>
-        <div id="msg">データを送信中...</div>
+        <div id="icon-area">
+            <div class="spinner" id="spinner"></div>
+            <div class="success-icon" id="success-icon">Check!</div>
+        </div>
+        <div id="msg">記録を送信しています...</div>
+        <div id="sub-msg">このまま少しお待ちください</div>
     </div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
 
         async function main() {
-            await liff.init({ liffId: "2009859584-THwDZKBN" });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            
-            const profile = await liff.getProfile();
-            const params = new URLSearchParams(window.location.search);
-            const item = params.get('item');
+            try {
+                // 1. LIFF初期化
+                await liff.init({ liffId: "2009859584-THwDZKBN" });
+                
+                // ブラウザ対応: ログインしていなければログイン
+                if (!liff.isLoggedIn()) { 
+                    liff.login({ redirectUri: window.location.href }); 
+                    return; 
+                }
+                
+                const profile = await liff.getProfile();
+                const params = new URLSearchParams(window.location.search);
+                const item = params.get('item');
 
-            if (item) {
-                await fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    body: JSON.stringify({ item: item, userId: profile.userId })
-                });
-                liff.closeWindow();
-            } else {
-                document.getElementById('msg').innerText = "アイテムIDが見つかりません";
+                if (item) {
+                    // 2. GASへデータ送信
+                    // 完了を確実に待つため await を使用
+                    await fetch(GAS_URL, {
+                        method: "POST",
+                        mode: "no-cors", // CORSエラー回避
+                        headers: { "Content-Type": "text/plain" },
+                        body: JSON.stringify({ 
+                            item: item, 
+                            userId: profile.userId,
+                            type: "dose_record" // 記録種別を明示
+                        })
+                    });
+
+                    // 3. 完了演出（少しだけ待つことでLINE通知との時差を調整）
+                    document.getElementById('spinner').style.display = "none";
+                    document.getElementById('success-icon').style.display = "block";
+                    document.getElementById('success-icon').innerText = "✅";
+                    document.getElementById('msg').innerText = "記録しました！";
+                    document.getElementById('sub-msg').innerText = "画面を閉じます...";
+
+                    setTimeout(() => {
+                        if (liff.isInClient()) {
+                            liff.closeWindow();
+                        } else {
+                            document.getElementById('sub-msg').innerText = "ブラウザを閉じてLINEに戻ってください";
+                        }
+                    }, 1500);
+
+                } else {
+                    document.getElementById('spinner').style.display = "none";
+                    document.getElementById('msg').innerText = "エラー";
+                    document.getElementById('sub-msg').innerText = "アイテムIDが見つかりませんでした。";
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('msg').innerText = "通信エラー";
+                document.getElementById('sub-msg').innerText = "もう一度お試しください。";
             }
         }
         main();
