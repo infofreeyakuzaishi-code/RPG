@@ -104,68 +104,90 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
+       const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
 
-        liff.init({ liffId: "2009859584-THwDZKBN" }).then(() => {
-            if (!liff.isLoggedIn()) { liff.login(); }
-        });
-
-        async function submitData() {
-            const btn = document.getElementById('submit-btn');
-            const afterMsg = document.getElementById('after-submit');
-            
-            btn.disabled = true;
-            btn.innerText = "送信中...";
-
-            try {
-                const context = await liff.getContext();
-                const userId = context.userId;
-
-                const payload = {
-                    type: "vital_record",
-                    userId: userId,
-                    weight: document.getElementById('weight').value,
-                    fat_pc: document.getElementById('fat_pc').value,
-                    fat_kg: document.getElementById('fat_kg').value,
-                    muscle: document.getElementById('muscle').value,
-                    water_pc: document.getElementById('water_pc').value,
-                    water_kg: document.getElementById('water_kg').value,
-                    protein_pc: document.getElementById('protein_pc').value,
-                    protein_kg: document.getElementById('protein_kg').value,
-                    steps: document.getElementById('steps').value,
-                    libre: document.getElementById('libre').value,
-                    blood: document.getElementById('blood').value,
-                    exercise: document.getElementById('exercise').value
-                };
-
-                fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    body: JSON.stringify(payload)
-                });
-
-                // 演出
-                btn.classList.add('completed');
-                btn.innerText = "送信完了";
-                
-                // 表示
-                afterMsg.style.display = 'block';
-
-                // より「ふわっ」とスクロールさせるための調整
-                // 要素が現れてから少し待って、中心にくるようにスクロール
-                setTimeout(() => {
-                    afterMsg.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center' // 画面の真ん中に持ってくることで余裕を持たせる
-                    });
-                }, 400);
-
-            } catch (e) {
-                alert("エラーが発生しました。");
-                btn.disabled = false;
-                btn.innerText = "再試行";
+    // LIFF初期化の安定化
+    window.onload = async () => {
+        try {
+            await liff.init({ liffId: "2009859584-THwDZKBN" });
+            if (!liff.isLoggedIn()) {
+                // LINE内ブラウザなら自動ログイン、外部ならボタン表示等の制御も可能
+                liff.login(); 
             }
+        } catch (err) {
+            console.error("LIFF初期化失敗:", err);
         }
+    };
+
+    async function submitData() {
+        const btn = document.getElementById('submit-btn');
+        const afterMsg = document.getElementById('after-submit');
+        
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        try {
+            // UserIDの取得（ゲスト対応）
+            let userId = "guest_user";
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+            }
+
+            // URLから親ID(item)を取得（逆引き用）
+            const urlParams = new URLSearchParams(window.location.search);
+            const itemId = urlParams.get('item');
+
+            const payload = {
+                type: "vital_record",
+                userId: userId,
+                parentId: itemId, // 逆引き用に親IDも送信
+                weight: document.getElementById('weight').value,
+                fat_pc: document.getElementById('fat_pc').value,
+                fat_kg: document.getElementById('fat_kg').value,
+                muscle: document.getElementById('muscle').value,
+                water_pc: document.getElementById('water_pc').value,
+                water_kg: document.getElementById('water_kg').value,
+                protein_pc: document.getElementById('protein_pc').value,
+                protein_kg: document.getElementById('protein_kg').value,
+                steps: document.getElementById('steps').value,
+                libre: document.getElementById('libre').value,
+                blood: document.getElementById('blood').value,
+                exercise: document.getElementById('exercise').value
+            };
+
+            // GASへ送信（awaitで完了を待つ）
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+
+            // 送信完了の演出
+            btn.classList.add('completed');
+            btn.innerText = "記録完了！";
+            afterMsg.style.display = 'block';
+
+            // スクロール演出
+            setTimeout(() => {
+                afterMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 400);
+
+            // 自動で閉じる（LINE内のみ。3秒後に実行）
+            setTimeout(() => {
+                if (liff.isInClient()) {
+                    liff.closeWindow();
+                }
+            }, 3000);
+
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました。通信環境を確認してください。");
+            btn.disabled = false;
+            btn.innerText = "もう一度送信する";
+        }
+    }
     </script>
 </body>
 </html>
