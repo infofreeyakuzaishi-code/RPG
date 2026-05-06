@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地域勢力図 - ろぎてむ</title>
+    <style>
+        :root { --sun: #f6ad55; --moon: #63b3ed; --earth: #68d391; --bg: #f7fafc; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #2d3748; }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { font-size: 18px; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; margin-bottom: 20px; outline: none; }
+        select:focus { border-color: #667eea; }
+
+        .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; margin-bottom: 10px; }
+        .score-box { padding: 10px; border-radius: 15px; color: white; }
+        .bg-sun { background: var(--sun); }
+        .bg-moon { background: var(--moon); }
+        .bg-earth { background: var(--earth); }
+        .score-val { font-size: 20px; font-weight: bold; display: block; }
+        .score-label { font-size: 11px; opacity: 0.9; }
+
+        .member-list { margin-top: 10px; }
+        .member-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #edf2f7; }
+        .member-info { display: flex; align-items: center; gap: 10px; }
+        .attr-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .member-name { font-weight: bold; font-size: 14px; }
+        .member-exp { font-size: 12px; color: #718096; }
+
+        #loader { text-align: center; padding: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>🌍 地域を選択</h2>
+        <select id="region-select" onchange="loadRegionData()">
+            <option value="">都道府県を選択してください</option>
+            <option value="東京都">東京都</option>
+            <option value="神奈川県">神奈川県</option>
+            <option value="大阪府">大阪府</option>
+            <!-- 必要に応じて他の都道府県を追加 -->
+        </select>
+
+        <div id="loader">データ取得中...</div>
+
+        <div id="result-area" style="display: none;">
+            <div class="score-grid">
+                <div class="score-box bg-sun"><span class="score-label">太陽</span><span id="sun-pt" class="score-val">0</span></div>
+                <div class="score-box bg-moon"><span class="score-label">月</span><span id="moon-pt" class="score-val">0</span></div>
+                <div class="score-box bg-earth"><span class="score-label">地球</span><span id="earth-pt" class="score-val">0</span></div>
+            </div>
+            
+            <div class="section-title" style="font-size: 13px; font-weight: bold; margin: 20px 0 10px; color: #a0aec0;">構成員メンバー</div>
+            <div id="member-list" class="member-list">
+                <!-- メンバーがここに動的に追加される -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyn99Nvf-FB62_X560HoMlZpP0TOI9mzHKpwnEwyA1STpVG6j0_i7y6H7hjFN0c3vHJ/exec";
+
+    async function loadRegionData() {
+        const region = document.getElementById('region-select').value;
+        if (!region) return;
+
+        const loader = document.getElementById('loader');
+        const resultArea = document.getElementById('result-area');
+        
+        loader.style.display = "block";
+        resultArea.style.display = "none";
+
+        try {
+            // GASに地域詳細データをリクエスト
+            const res = await fetch(`${GAS_URL}?type=getRegionDetails&area=${encodeURIComponent(region)}`);
+            const data = await res.json();
+
+            // ポイント反映
+            document.getElementById('sun-pt').innerText = data.points.sun;
+            document.getElementById('moon-pt').innerText = data.points.moon;
+            document.getElementById('earth-pt').innerText = data.points.earth;
+
+            // メンバーリスト反映
+            const listContainer = document.getElementById('member-list');
+            listContainer.innerHTML = "";
+            
+            data.members.forEach(m => {
+                const attrColor = m.attr === "太陽" ? "var(--sun)" : (m.attr === "月" ? "var(--moon)" : "var(--earth)");
+                listContainer.innerHTML += `
+                    <div class="member-item">
+                        <div class="member-info">
+                            <div class="attr-dot" style="background: ${attrColor}"></div>
+                            <div>
+                                <div class="member-name">${m.rank}</div>
+                                <div style="font-size: 10px; color: #a0aec0;">${m.attr}属性</div>
+                            </div>
+                        </div>
+                        <div class="member-exp">${m.exp} EXP</div>
+                    </div>
+                `;
+            });
+
+            resultArea.style.display = "block";
+        } catch (err) {
+            alert("データの取得に失敗しました。");
+        } finally {
+            loader.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
