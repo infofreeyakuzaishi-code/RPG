@@ -114,13 +114,21 @@
             document.getElementById('moon-pt').innerText = data.points.moon;
             document.getElementById('earth-pt').innerText = data.points.earth;
 
-            const list = document.getElementById('member-list');
-            list.innerHTML = data.members.map(m => `
-                <div class="member-row">
-                    <span style="font-size:13px; font-weight:bold;">${m.rank}</span>
-                    <span style="font-size:11px; color:#718096;">${m.exp} EXP</span>
-                </div>
-            `).join('');
+           // loadRegionData関数内のリスト生成部分
+const list = document.getElementById('member-list');
+list.innerHTML = data.members.map(m => `
+    <div class="member-row" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;" 
+         onclick="${m.snsUrl ? `window.open('${m.snsUrl}', '_blank')` : ''}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 14px; font-weight: bold;">${m.name}</div>
+            <div style="font-size: 10px; color: #718096; background: #edf2f7; padding: 2px 6px; border-radius: 4px;">${m.attr}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="font-size: 12px; color: #4a5568;">${m.rank}</span>
+            ${m.snsUrl ? '<span style="font-size: 14px;">🔗</span>' : ''}
+        </div>
+    </div>
+`).join('');
 
             document.getElementById('result-area').style.display = "block";
         } catch (err) { alert("通信エラー"); }
