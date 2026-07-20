@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>エコダイエット - 育成デモ</title>
+  <style>
+    :root {
+      --bg-color: #f4f7f6;
+      --card-bg: #ffffff;
+      --primary: #4caf50;
+      --primary-hover: #45a049;
+      --text: #333333;
+      --accent: #ff9800;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ヘッダー・ステータス */
+    .header {
+      text-align: center;
+    }
+    .month-badge {
+      font-size: 0.8rem;
+      background: #e8f5e9;
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+    .stats-card {
+      display: flex;
+      justify-content: space-around;
+      background: #fafafa;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 10px;
+      border: 1px solid #eeeeee;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #777;
+    }
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    /* キャラクター表示エリア */
+    .character-stage {
+      background: linear-gradient(180deg, #e3f2fd 0%, #ffffff 100%);
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+
+    /* 吹き出し */
+    .speech-bubble {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #444;
+      display: inline-block;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 8px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+    }
+
+    /* キャラクターのアニメーション（ふわふわ浮く効果） */
+    .char-avatar {
+      font-size: 72px;
+      user-select: none;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(2deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    /* 喜びアニメーション */
+    .char-avatar.happy {
+      animation: bounce 0.6s ease;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.15); }
+    }
+
+    .exp-bar-container {
+      width: 100%;
+      background: #e0e0e0;
+      height: 10px;
+      border-radius: 5px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .exp-bar {
+      width: 25%;
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.4s ease;
+    }
+
+    /* タブ切り替え */
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: #eee;
+      border-radius: 10px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* 入力フォーム */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .input-field {
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .action-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .action-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    /* 1日評価ボタン群 */
+    .eval-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .eval-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .eval-btn:hover {
+      border-color: var(--primary);
+      background: #f1f8e9;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- ヘッダー -->
+  <div class="header">
+    <span class="month-badge">7月のタマゴ 🥚</span>
+    <div class="stats-card">
+      <div class="stat-item">
+        <div class="stat-label">今月の削減金額</div>
+        <div class="stat-value" id="total-money">¥1,250</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">削減カロリー</div>
+        <div class="stat-value" id="total-kcal">840 kcal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- キャラクター表示（アニメーション付き） -->
+  <div class="character-stage">
+    <div class="speech-bubble" id="speech">「今日も我慢できた？応援してるよ！」</div>
+    <div>
+      <span class="char-avatar" id="avatar">🥚</span>
+    </div>
+    <div style="font-size: 0.8rem; color: #666; margin-top: 4px;" id="char-name">状態: まだ見ぬタマゴ</div>
+    <div class="exp-bar-container">
+      <div class="exp-bar" id="exp-bar"></div>
+    </div>
+  </div>
+
+  <!-- 操作タブ -->
+  <div class="tab-buttons">
+    <button class="tab-btn active" onclick="switchTab('tab-item')">② 買おうとしてやめた</button>
+    <button class="tab-btn" onclick="switchTab('tab-eval')">③ 1日の評価</button>
+  </div>
+
+  <!-- ② 我慢ログ入力フォーム -->
+  <div id="tab-item" class="form-group">
+    <input type="text" id="item-name" class="input-field" placeholder="やめたもの（例: コンビニスイーツ）">
+    <div style="display: flex; gap: 8px;">
+      <input type="number" id="item-price" class="input-field" style="flex:1" placeholder="金額 (円)">
+      <input type="number" id="item-kcal" class="input-field" style="flex:1" placeholder="カロリー (kcal)">
+    </div>
+    <button class="action-btn" onclick="addLog()">我慢した！(加点＆記録)</button>
+  </div>
+
+  <!-- ③ 1日評価フォーム（非表示初期状態） -->
+  <div id="tab-eval" class="form-group" style="display: none;">
+    <div style="font-size: 0.85rem; color: #555; text-align: center;">今日のマインドはどうだった？</div>
+    <div class="eval-buttons">
+      <button class="eval-btn" onclick="submitEval('great')">
+        <span style="font-size: 1.2rem;">🛡️</span>
+        <b>無駄遣いゼロ</b>
+        <span style="font-size: 0.7rem; color: #777;">+100 EXP</span>
+      </button>
+      <button class="eval-btn" onclick="submitEval('good')">
+        <span style="font-size: 1.2rem;">✨</span>
+        <b>最高に節約</b>
+        <span style="font-size: 0.7rem; color: #777;">+150 EXP</span>
+      </button>
+      <button class="eval-btn" onclick="submitEval('normal')">
+        <span style="font-size: 1.2rem;">🙂</span>
+        <b>普通に過ごした</b>
+        <span style="font-size: 0.7rem; color: #777;">+50 EXP</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 状態管理変数
+  let totalMoney = 1250;
+  let totalKcal = 840;
+  let exp = 25; // ％表記
+
+  const avatars = [
+    { threshold: 0, emoji: '🥚', name: '状態: タマゴ', speech: '「今日も我慢できた？応援してるよ！」' },
+    { threshold: 40, emoji: '🐣', name: '状態: ひよこ（進化1段階）', speech: '「殻が破れたよ！順調だね！」' },
+    { threshold: 80, emoji: '🐥', name: '状態: はがねヒヨコ（最終形間近）', speech: '「無駄遣いセンサー作動中！素晴らしい防御力！」' }
+  ];
+
+  // タブ切り替え
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    if(tabId === 'tab-item') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('tab-item').style.display = 'flex';
+      document.getElementById('tab-eval').style.display = 'none';
+    } else {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.getElementById('tab-item').style.display = 'none';
+      document.getElementById('tab-eval').style.display = 'flex';
+    }
+  }
+
+  // 喜ぶアニメーション＆セリフ更新
+  function triggerHappiness(speechText) {
+    const avatar = document.getElementById('avatar');
+    const speech = document.getElementById('speech');
+    
+    avatar.classList.remove('happy');
+    void avatar.offsetWidth; // リフロー発生させてアニメーション再適用
+    avatar.classList.add('happy');
+
+    speech.innerText = speechText;
+  }
+
+  // 経験値加算と進化ロジック
+  function addExp(amount) {
+    exp = Math.min(100, exp + amount);
+    document.getElementById('exp-bar').style.width = exp + '%';
+
+    // 進化チェック
+    let currentStage = avatars[0];
+    for (let stage of avatars) {
+      if (exp >= stage.threshold) {
+        currentStage = stage;
+      }
+    }
+    document.getElementById('avatar').innerText = currentStage.emoji;
+    document.getElementById('char-name').innerText = currentStage.name;
+    return currentStage.speech;
+  }
+
+  // ② 我慢ログの追加
+  function addLog() {
+    const priceInput = document.getElementById('item-price');
+    const kcalInput = document.getElementById('item-kcal');
+    const nameInput = document.getElementById('item-name');
+
+    const price = parseInt(priceInput.value) || 0;
+    const kcal = parseInt(kcalInput.value) || 0;
+
+    if (price === 0 && kcal === 0) {
+      alert('金額またはカロリーを入力してください！');
+      return;
+    }
+
+    totalMoney += price;
+    totalKcal += kcal;
+
+    document.getElementById('total-money').innerText = '¥' + totalMoney.toLocaleString();
+    document.getElementById('total-kcal').innerText = totalKcal.toLocaleString() + ' kcal';
+
+    const defaultSpeech = addExp(15); // 我慢ログで15%経験値UP
+    triggerHappiness(`「${nameInput.value || '我慢'}」を回避！ナイス防衛！(+15 EXP)`);
+
+    // フォームリセット
+    nameInput.value = '';
+    priceInput.value = '';
+    kcalInput.value = '';
+  }
+
+  // ③ 1日評価の送信
+  function submitEval(type) {
+    let gainedExp = 50;
+    let msg = '「明日もこの調子でいこう！」';
+
+    if (type === 'great') {
+      gainedExp = 100;
+      msg = '「無駄遣いゼロ！完璧なマインドだね！」';
+    } else if (type === 'good') {
+      gainedExp = 150;
+      msg = '「最高レベルの節約達成！経験値ガッポリ！」';
+    }
+
+    addExp(gainedExp);
+    triggerHappiness(msg);
+  }
+</script>
+
+
+</body>
+</html>
