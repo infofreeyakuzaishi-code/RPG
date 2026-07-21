@@ -3,396 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>エコ・防衛ロボ - 育成デモ</title>
+  <title>ROGITAN エコ・防衛デモ</title>
   <style>
+    /* アプリ全体の背景（少しクリーム色の和紙っぽい質感） */
     :root {
-      --bg-color: #f0f4f8;
+      --app-bg: #fdfae6; /* 元画像の背景に近い色 */
       --card-bg: #ffffff;
-      --primary: #2196f3; /* ロボットに合わせて青に変更 */
-      --primary-hover: #1e88e5;
-      --text: #333333;
-      --accent: #ff9800;
-      /* ロボットの初期色（JSで動的に変わります） */
-      --char-color-hue: 120; /* 0-360 */
+      --text: #3e2723; /* ロゴの文字色に近い焦げ茶色 */
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text); display: flex; justify-content: center; padding: 16px; min-height: 100vh; }
-
-    .app-container {
-      width: 100%; max-width: 420px; background: var(--card-bg); border-radius: 24px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1); padding: 20px;
-      display: flex; flex-direction: column; gap: 16px;
-      position: relative; overflow: hidden;
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    
+    body {
+      background-color: var(--app-bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
     }
 
-    /* デモ用リセットボタン */
-    .demo-reset-btn {
-      position: absolute; top: 10px; left: 10px; font-size: 0.6rem; padding: 4px 8px;
-      background: #eee; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; z-index: 10;
+    /* アプリのカードコンテナ */
+    .app-card {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 380px;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 24px;
+      text-align: center;
     }
 
-    /* ヘッダー */
-    .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 12px; }
-    .month-badge { font-size: 0.9rem; font-weight: bold; color: #555; }
-    .char-type-badge {
-      font-size: 0.75rem; color: white; padding: 3px 10px; border-radius: 12px;
-      margin-top: 4px; display: inline-block;
-    }
-
-    /* ステータスカード */
-    .stats-card {
-      display: flex; justify-content: space-around; background: #fafafa;
-      padding: 12px; border-radius: 16px; margin-top: 10px; border: 1px solid #eeeeee;
-    }
-    .stat-item { text-align: center; }
-    .stat-label { font-size: 0.75rem; color: #777; }
-    .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
-
-    /* キャラクター（ロボット）エリア */
-    .character-stage {
-      background: linear-gradient(180deg, #e3f2fd 0%, #ffffff 100%);
-      border-radius: 20px; padding: 30px 16px; text-align: center;
-      position: relative; border: 2px solid #e0e0e0; min-height: 250px;
+    /* キャラクター表示エリア（背景グラデーション） */
+    .char-stage {
+      background: linear-gradient(180deg, #fff9c4 0%, #ffffff 100%);
+      border-radius: 16px;
+      padding: 40px 20px;
+      border: 1px solid #eee;
+      position: relative;
+      overflow: hidden;
     }
 
     /* 吹き出し */
     .speech-bubble {
-      background: #ffffff; border-radius: 16px; padding: 10px 16px; font-size: 0.9rem;
-      font-weight: bold; color: #444; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-      width: 80%; z-index: 2; transition: opacity 0.3s;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #444;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 85%;
+      z-index: 2;
     }
     .speech-bubble::after {
-      content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-      border-width: 10px 10px 0; border-style: solid; border-color: #ffffff transparent;
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 8px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
     }
 
-    /* ロボットのアニメーション（浮遊とパーツの動き） */
-    .char-visual {
-      font-size: 96px; user-select: none; display: inline-block; position: relative;
-      margin-top: 40px; /* 吹き出しの下に配置 */
-      animation: robot-float 4s ease-in-out infinite;
-      transition: filter 0.5s ease; /* 色変更用 */
+    /* =========================================
+       ★ここからROGITANのアニメーション設定
+    ========================================= */
+
+    /* コンテナ全体をふわふわ上下させる */
+    .rogitan-container {
+      margin-top: 30px; /* 吹き出しの下に配置 */
+      position: relative;
+      
+      /* アニメーション1：上下浮遊（float） */
+      animation: float 4s ease-in-out infinite;
     }
 
-    /* ロボットの色違いをCSSフィルタで表現（Hue回転） */
-    .char-visual.colored {
-      filter: hue-rotate(calc(var(--char-color-hue) * 1deg));
+    /* 元画像（image.png）自体を「息づかい（伸縮）」させる */
+    .rogitan-img {
+      display: block;
+      margin: 0 auto;
+      max-width: 200px; /* 必要に応じてサイズ調整 */
+      height: auto;
+      
+      /* アニメーション2：息づかい伸縮（breathe） */
+      animation: breathe 5s ease-in-out infinite;
+      
+      /* 伸縮の中心を足元にする（立体感が出る） */
+      transform-origin: bottom center;
     }
 
-    @keyframes robot-float {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-15px) rotate(1deg); }
+    /* アニメーション定義1：上下浮遊（float） */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); } /* ゆっくり上に移動 */
     }
 
-    /* 喜びアニメーション（ジャンプ＋振動） */
-    .char-visual.happy {
-      animation: robot-jump 0.5s ease;
+    /* アニメーション定義2：息づかい伸縮（breathe） */
+    @keyframes breathe {
+      0%, 100% { transform: scaleY(1); }    /* 元のサイズ */
+      50% { transform: scaleY(1.03); }      /* 縦に3%だけゆっくり伸びる */
     }
 
-    @keyframes robot-jump {
-      0%, 100% { transform: translateY(0) scale(1); }
-      30% { transform: translateY(-30px) scale(1.1) rotate(-3deg); }
-      60% { transform: translateY(-30px) scale(1.1) rotate(3deg); }
-    }
+    /* ========================================= */
 
-    /* 分岐進化アニメーション（少し光る） */
-    .char-visual.evolve {
-      animation: robot-evolve 1s ease;
-    }
-    @keyframes robot-evolve {
-      0% { filter: brightness(1) hue-rotate(calc(var(--char-color-hue) * 1deg)); }
-      50% { filter: brightness(2) hue-rotate(calc(var(--char-color-hue) * 1deg)); }
-      100% { filter: brightness(1) hue-rotate(calc(var(--char-color-hue) * 1deg)); }
-    }
+    /* 経験値バーなど（前のデモの流用） */
+    .exp-bar-container { width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; margin-top: 20px; overflow: hidden; }
+    .exp-bar { width: 65%; height: 100%; background: #ff9800; } /* ROGITANのオレンジに合わせてアクセントカラーに */
 
-    /* 経験値バー */
-    .exp-bar-container { width: 100%; background: #e0e0e0; height: 12px; border-radius: 6px; margin-top: 20px; overflow: hidden; }
-    .exp-bar { width: 0%; height: 100%; background: var(--primary); transition: width 0.4s ease; }
-
-    /* 入力エリア */
-    .input-section { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-    .tab-buttons { display: flex; gap: 8px; }
-    .tab-btn {
-      flex: 1; padding: 12px; border: none; background: #eee; border-radius: 12px;
-      font-weight: bold; color: #666; cursor: pointer; font-size: 0.9rem;
-    }
-    .tab-btn.active { background: var(--primary); color: white; }
-
-    .form-group { display: flex; flex-direction: column; gap: 8px; }
-    .input-field { padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 1rem; }
-    .action-btn {
-      background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px;
-      font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: background 0.2s;
-    }
-    .action-btn:hover { background: var(--primary-hover); }
-
-    .eval-buttons { display: flex; gap: 8px; }
-    .eval-btn {
-      flex: 1; padding: 14px 8px; border: 1px solid #ddd; border-radius: 10px; background: white;
-      font-size: 0.9rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px;
-    }
-    .eval-btn:hover { border-color: var(--primary); background: #e3f2fd; }
+    /* ステータス */
+    .status { margin-top: 15px; font-size: 0.9rem; font-weight: bold; }
+    .status-val { color: #f57c00; }
   </style>
 </head>
 <body>
 
-<div class="app-container">
-  <button class="demo-reset-btn" onclick="resetMonthDemo()">（デモ用）月リセット</button>
-
-  <!-- ヘッダー -->
-  <div class="header">
-    <div class="month-badge"><span id="current-month">7</span>月のエコ防衛ロボ</div>
-    <div class="char-type-badge" id="char-type-name" style="background-color: #888;">初期型ロボ</div>
-    <div class="stats-card">
-      <div class="stat-item">
-        <div class="stat-label">今月の削減金額</div>
-        <div class="stat-value" id="total-money">¥0</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">削減カロリー</div>
-        <div class="stat-value" id="total-kcal">0 kcal</div>
-      </div>
+<div class="app-card">
+  <!-- キャラクターエリア -->
+  <div class="char-stage">
+    <div class="speech-bubble">「防衛システム起動！ROGITANがあなたのエコをサポートするよ！」</div>
+    
+    <!-- ★アニメーション用のコンテナと画像 -->
+    <div class="rogitan-container">
+      <!-- 元画像をそのまま指定 -->
+      <img src="DD76E8A3-67FB-4A8E-B4B9-608C8B430CC0.png" alt="ROGITAN" class="rogitan-img">
     </div>
-  </div>
 
-  <!-- キャラクター（ロボット）エリア -->
-  <div class="character-stage">
-    <div class="speech-bubble" id="speech">「防衛システム起動。今月のエコ活動を記録してください。」</div>
-    <div>
-      <span class="char-visual colored" id="avatar">🤖</span>
-    </div>
     <div class="exp-bar-container">
-      <div class="exp-bar" id="exp-bar"></div>
+      <div class="exp-bar"></div>
     </div>
   </div>
 
-  <!-- 入力セクション -->
-  <div class="input-section">
-    <div class="tab-buttons">
-      <button class="tab-btn active" onclick="switchTab('tab-item')">誘惑を撃破⚔️</button>
-      <button class="tab-btn" onclick="switchTab('tab-eval')">1日の防衛評価🛡️</button>
-    </div>
-
-    <!-- ② 我慢ログ入力 -->
-    <div id="tab-item" class="form-group">
-      <input type="text" id="item-name" class="input-field" placeholder="買おうとしたもの（例: ジュース）">
-      <div style="display: flex; gap: 8px;">
-        <input type="number" id="item-price" class="input-field" style="flex:1" placeholder="金額 (円)">
-        <input type="number" id="item-kcal" class="input-field" style="flex:1" placeholder="カロリー (kcal)">
-      </div>
-      <button class="action-btn" onclick="addLog()">我慢して防衛成功！</button>
-    </div>
-
-    <!-- ③ 1日評価 -->
-    <div id="tab-eval" class="form-group" style="display: none;">
-      <div class="eval-buttons">
-        <button class="eval-btn" onclick="submitEval('perfect')">
-          <span style="font-size: 1.5rem;">👑</span>
-          <b>完璧な防衛</b>
-          <span style="font-size: 0.7rem; color: #777;">(無駄遣い0)</span>
-        </button>
-        <button class="eval-btn" onclick="submitEval('good')">
-          <span style="font-size: 1.5rem;">✨</span>
-          <b>高い節約意識</b>
-          <span style="font-size: 0.7rem; color: #777;">(自炊など)</span>
-        </button>
-        <button class="eval-btn" onclick="submitEval('normal')">
-          <span style="font-size: 1.5rem;">🙂</span>
-          <b>通常モード</b>
-          <span style="font-size: 0.7rem; color: #777;"></span>
-        </button>
-      </div>
-    </div>
+  <!-- ステータス表示 -->
+  <div class="status">
+    今月の防衛資金: <span class="status-val">¥4,800</span> / 
+    削減エネルギー: <span class="status-val">3,200 kcal</span>
   </div>
 </div>
 
-<script>
-  // --- 状態管理 ---
-  let currentState = {
-    month: 7,
-    money: 0,
-    kcal: 0,
-    exp: 0,
-    // ロボットの初期設定
-    baseType: 0, // 0:バランス型, 1:パワード型(金額重視), 2:スピード型(カロリー重視)
-    colorHue: 120, // 緑
-    currentStage: 0, // 0:初期, 1:分岐進化
-    logs: { moneyCount: 0, kcalCount: 0, perfectCount: 0 }
-  };
-
-  // --- データ定義（ロボットの型と色違い） ---
-  const robotBases = [
-    { name: "初期型マモル", emoji: "🤖", color: "#4caf50", hue: 120 }, // 緑
-    { name: "プロトタイプ・アオ", emoji: "🤖", color: "#2196f3", hue: 200 }, // 青
-    { name: "試作参号機・アカ", emoji: "🤖", color: "#f44336", hue: 0 }    // 赤
-  ];
-
-  // 行動パターンによる進化分岐の絵文字リスト
-  const evolveMatrix = {
-    // [baseType][evolveType]
-    0: { money: "🦾", kcal: "🦿", balance: "🤖", name: "汎用防衛ロボ" },
-    1: { money: "💰", kcal: "🦾", balance: "🦿", name: "金庫破りロボ" }, // 金額我慢が多い
-    2: { money: "🦿", kcal: "⚡", balance: "🦾", name: "超高速ロボ" }  // カロリー我慢が多い
-  };
-
-  const speeches = {
-    start: "防衛システム起動。今月の活動を記録してください。",
-    log: "誘惑を撃破！防衛資金とエネルギーを確認しました。",
-    evalPerfect: "完璧な防衛です！素晴らしいマインドパワー！",
-    evolve: "防衛ログに基づき、システムが進化しました！💻✨"
-  };
-
-  // --- 初期化・デモ用リセット ---
-  function initRobot(isReset = false) {
-    if(isReset) {
-      // ランダムに初期ロボット（型と色違い）を選択
-      currentState.baseType = Math.floor(Math.random() * robotBases.length);
-      // 色違い（Hue）をランダムに微調整（0-360）
-      currentState.colorHue = Math.floor(Math.random() * 360);
-      
-      currentState.month = currentState.month < 12 ? currentState.month + 1 : 1;
-      currentState.money = 0;
-      currentState.kcal = 0;
-      currentState.exp = 0;
-      currentState.currentStage = 0;
-      currentState.logs = { moneyCount: 0, kcalCount: 0, perfectCount: 0 };
-    }
-
-    const base = robotBases[currentState.baseType];
-    document.getElementById('current-month').innerText = currentState.month;
-    document.getElementById('avatar').innerText = base.emoji;
-    document.getElementById('char-type-name').innerText = base.name;
-    // 色違いを適用
-    document.documentElement.style.setProperty('--char-color-hue', currentState.colorHue);
-
-    updateDisplay();
-    triggerSpeech(speeches.start);
-  }
-
-  function resetMonthDemo() {
-    initRobot(true);
-  }
-
-  // --- 画面表示更新 ---
-  function updateDisplay() {
-    document.getElementById('total-money').innerText = '¥' + currentState.money.toLocaleString();
-    document.getElementById('total-kcal').innerText = currentState.kcal.toLocaleString() + ' kcal';
-    document.getElementById('exp-bar').style.width = Math.min(100, currentState.exp) + '%';
-  }
-
-  // --- アニメーション＆セリフ ---
-  function triggerHappiness() {
-    const avatar = document.getElementById('avatar');
-    avatar.classList.remove('happy');
-    void avatar.offsetWidth; // リフロー発生
-    avatar.classList.add('happy');
-  }
-
-  function triggerEvolution() {
-    const avatar = document.getElementById('avatar');
-    avatar.classList.add('evolve');
-    setTimeout(() => avatar.classList.remove('evolve'), 1000);
-  }
-
-  function triggerSpeech(text) {
-    const bubble = document.getElementById('speech');
-    bubble.innerText = text;
-  }
-
-  // --- 進化・行動分岐ロジック ---
-  function checkEvolution() {
-    // 経験値が50を超え、まだ初期段階の場合に進化
-    if (currentState.exp >= 50 && currentState.currentStage === 0) {
-      currentState.currentStage = 1;
-      
-      // 行動ログに基づいて進化先のビジュアル（emoji）と名前を選択
-      const logs = currentState.logs;
-      let evolveType = 'balance';
-      if (logs.moneyCount > logs.kcalCount && logs.moneyCount > logs.perfectCount) {
-        evolveType = 'money'; // 金額我慢が多い
-      } else if (logs.kcalCount > logs.moneyCount && logs.kcalCount > logs.perfectCount) {
-        evolveType = 'kcal';   // カロリー我慢が多い
-      }
-      
-      const evolvedData = evolveMatrix[currentState.baseType][evolveType];
-      
-      // ビジュアルと名前を更新
-      document.getElementById('avatar').innerText = evolvedData[evolveType];
-      document.getElementById('char-type-name').innerText = evolvedData.name;
-      
-      triggerEvolution();
-      triggerSpeech(speeches.evolve);
-    }
-  }
-
-  // --- ロジック（入力処理） ---
-  function addExp(amount) {
-    currentState.exp += amount;
-    updateDisplay();
-    checkEvolution(); // 経験値が入るたびに進化チェック
-  }
-
-  // ② 我慢ログ
-  function addLog() {
-    const pInput = document.getElementById('item-price');
-    const kInput = document.getElementById('item-kcal');
-    const price = parseInt(pInput.value) || 0;
-    const kcal = parseInt(kInput.value) || 0;
-
-    if (price === 0 && kcal === 0) return;
-
-    currentState.money += price;
-    currentState.kcal += kcal;
-    // 行動ログを記録（進化分岐用）
-    if (price > 500) currentState.logs.moneyCount++;
-    if (kcal > 300) currentState.logs.kcalCount++;
-
-    updateDisplay();
-    addExp(15);
-    triggerHappiness();
-    triggerSpeech(speeches.log);
-
-    pInput.value = ''; kInput.value = ''; document.getElementById('item-name').value = '';
-  }
-
-  // ③ 1日評価
-  function submitEval(type) {
-    let gainedExp = 50;
-    let msg = speeches.log;
-
-    if (type === 'perfect') {
-      gainedExp = 150;
-      currentState.logs.perfectCount += 2; // 完璧な防衛は分岐に強く影響
-      msg = speeches.evalPerfect;
-    } else if (type === 'good') {
-      gainedExp = 100;
-    }
-
-    addExp(gainedExp);
-    triggerHappiness();
-    triggerSpeech(msg);
-  }
-
-  // --- タブ切り替え ---
-  function switchTab(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById('tab-item').style.display = 'none';
-    document.getElementById('tab-eval').style.display = 'none';
-
-    if(tabId === 'tab-item') {
-      document.querySelectorAll('.tab-btn')[0].classList.add('active');
-      document.getElementById('tab-item').style.display = 'flex';
-    } else {
-      document.querySelectorAll('.tab-btn')[1].classList.add('active');
-      document.getElementById('tab-eval').style.display = 'flex';
-    }
-  }
-
-  // 起動
-  initRobot();
-
-</script>
 </body>
 </html>
