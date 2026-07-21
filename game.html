@@ -157,7 +157,7 @@
       cursor: pointer;
     }
 
-    /* --- カレンダー（月移動機能追加） --- */
+    /* --- カレンダー --- */
     .month-header {
       display: flex;
       justify-content: space-between;
@@ -211,7 +211,7 @@
     .calendar-cell.is-sun .day-num,
     .calendar-cell.is-holiday .day-num { color: var(--holiday-color); }
     .calendar-cell.is-sat .day-num { color: var(--income-color); }
-    .holiday-label { font-size: 0.55rem; color: var(--holiday-color); font-weight: bold; line-height: 1; margin-bottom: 2px; }
+    .holiday-label { font-size: 0.55rem; color: var(--holiday-color); font-weight: bold; line-height: 1; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .calendar-cell .tag-exp { color: var(--expense-color); font-size: 0.6rem; }
     .calendar-cell .tag-inc { color: var(--income-color); font-size: 0.6rem; }
@@ -359,7 +359,7 @@
       </form>
     </div>
 
-    <!-- 3. カレンダーページ（月移動ヘッダー付き） -->
+    <!-- 3. カレンダーページ -->
     <div id="page-calendar" class="page">
       <div class="month-header">
         <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 前月</button>
@@ -420,9 +420,8 @@
   let currentType = 'expense';
   let settingType = 'expense';
 
-  // カレンダー管理用データ（初期表示：2026年7月）
   let viewYear = 2026;
-  let viewMonth = 7; // 1-12
+  let viewMonth = 7;
 
   let categories = {
     expense: ['食材費（家）', '外食費', '日用品', '交通費', '娯楽'],
@@ -431,6 +430,7 @@
   };
 
   const sampleLogs = [
+    { date: '2026-05-03', type: 'expense', category: '娯楽', amount: 3200, memo: 'GWおでかけ' },
     { date: '2026-06-15', type: 'defense', category: 'ついで買い我慢', amount: 500, kcal: 250, memo: '先月の我慢テスト' },
     { date: '2026-07-20', type: 'expense', category: '食材費（家）', amount: 2580, memo: 'スーパー買い出し' },
     { date: '2026-07-20', type: 'defense', category: '外食回避自炊', amount: 1200, kcal: 650, carb: 80, fat: 20, memo: '夜のカツ丼我慢して自炊' },
@@ -438,12 +438,62 @@
     { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' }
   ];
 
-  // 祝日データ定義（デモ用）
-  const holidays = {
-    '2026-07-20': '海の日',
-    '2026-08-11': '山の日',
-    '2026-09-21': '敬老の日'
-  };
+  /* --- 日本の祝日判定ロジック（全月自動計算） --- */
+  function getJapaneseHoliday(year, month, day) {
+    const mStr = month < 10 ? '0' + month : month;
+    const dStr = day < 10 ? '0' + day : day;
+    const dateStr = `${year}-${mStr}-${dStr}`;
+    const dateObj = new Date(year, month - 1, day);
+    const dayOfWeek = dateObj.getDay();
+
+    // 春分・秋分の簡易計算
+    const vernalEquinox = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    const autumnalEquinox = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+
+    // N番目の月曜日（ハッピーマンデー）判定関数
+    const isNthMonday = (n) => dayOfWeek === 1 && Math.ceil(day / 7) === n;
+
+    let name = '';
+
+    // 固定祝日・ハッピーマンデー
+    if (month === 1) {
+      if (day === 1) name = '元日';
+      else if (isNthMonday(2)) name = '成人の日';
+    } else if (month === 2) {
+      if (day === 11) name = '建国記念の日';
+      else if (day === 23) name = '天皇誕生日';
+    } else if (month === 3) {
+      if (day === vernalEquinox) name = '春分の日';
+    } else if (month === 4) {
+      if (day === 29) name = '昭和の日';
+    } else if (month === 5) {
+      if (day === 3) name = '憲法記念日';
+      else if (day === 4) name = 'みどもの日';
+      else if (day === 5) name = 'こどもの日';
+    } else if (month === 7) {
+      if (isNthMonday(3)) name = '海の日';
+    } else if (month === 8) {
+      if (day === 11) name = '山の日';
+    } else if (month === 9) {
+      if (isNthMonday(3)) name = '敬老の日';
+      else if (day === autumnalEquinox) name = '秋分の日';
+    } else if (month === 10) {
+      if (isNthMonday(2)) name = 'スポーツの日';
+    } else if (month === 11) {
+      if (day === 3) name = '文化の日';
+      else if (day === 23) name = '勤労感謝の日';
+    }
+
+    if (name) return name;
+
+    // 振替休日判定（日曜日に祝日があった場合、翌月曜などが振替）
+    if (dayOfWeek === 1) {
+      const prevDayHoliday = getJapaneseHoliday(year, month, day - 1);
+      if (prevDayHoliday && !prevDayHoliday.includes('振替')) return '振替休日';
+    }
+
+    return '';
+  }
 
   window.onload = () => {
     document.getElementById('inputDate').value = '2026-07-21';
@@ -505,7 +555,6 @@
     document.getElementById('inputAmount').value = '';
     document.getElementById('inputMemo').value = '';
 
-    // 入力した日付の月にカレンダー表示を移動
     const d = new Date(date);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth() + 1;
@@ -515,7 +564,6 @@
     navTo('home', 'ホーム (ROGITAN)', document.querySelectorAll('.nav-item')[0]);
   }
 
-  /* --- 月変更ボタンの処理 --- */
   function changeMonth(diff) {
     viewMonth += diff;
     if (viewMonth < 1) {
@@ -528,14 +576,12 @@
     renderCalendar();
   }
 
-  /* --- 動的カレンダー描画ロジック --- */
   function renderCalendar() {
     document.getElementById('currentMonthTitle').textContent = `${viewYear}年 ${viewMonth}月`;
 
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
 
-    // 曜日ヘッダー
     const days = [
       { name: '日', cls: 'sun' }, { name: '月', cls: '' }, { name: '火', cls: '' },
       { name: '水', cls: '' }, { name: '木', cls: '' }, { name: '金', cls: '' }, { name: '土', cls: 'sat' }
@@ -547,13 +593,11 @@
       grid.appendChild(head);
     });
 
-    // 表示月の1日の曜日と最終日を取得
     const firstDay = new Date(viewYear, viewMonth - 1, 1);
     const lastDay = new Date(viewYear, viewMonth, 0);
-    const startDayOfWeek = firstDay.getDay(); // 0:日, 1:月...
+    const startDayOfWeek = firstDay.getDay();
     const totalDays = lastDay.getDate();
 
-    // 前月の埋めコマ計算
     const prevMonthLastDay = new Date(viewYear, viewMonth - 1, 0).getDate();
     for (let p = startDayOfWeek - 1; p >= 0; p--) {
       const cell = document.createElement('div');
@@ -562,7 +606,6 @@
       grid.appendChild(cell);
     }
 
-    // 当月の日付コマ描画
     for (let day = 1; day <= totalDays; day++) {
       const dateObj = new Date(viewYear, viewMonth - 1, day);
       const dayOfWeek = dateObj.getDay();
@@ -570,20 +613,22 @@
       const dStr = day < 10 ? '0' + day : day;
       const dateStr = `${viewYear}-${mStr}-${dStr}`;
 
+      // 祝日名の取得
+      const holidayName = getJapaneseHoliday(viewYear, viewMonth, day);
+
       const cell = document.createElement('div');
       let cellCls = 'calendar-cell';
       if (dayOfWeek === 0) cellCls += ' is-sun';
       if (dayOfWeek === 6) cellCls += ' is-sat';
-      if (holidays[dateStr]) cellCls += ' is-holiday';
+      if (holidayName) cellCls += ' is-holiday';
       cell.className = cellCls;
       cell.onclick = () => showDetail(dateStr);
 
       let dayHtml = `<div class="day-num">${day}</div>`;
-      if (holidays[dateStr]) {
-        dayHtml += `<div class="holiday-label">${holidays[dateStr]}</div>`;
+      if (holidayName) {
+        dayHtml += `<div class="holiday-label" title="${holidayName}">${holidayName}</div>`;
       }
 
-      // 当日のログ抽出
       const dayLogs = sampleLogs.filter(l => l.date === dateStr);
       dayLogs.forEach(l => {
         if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
