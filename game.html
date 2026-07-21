@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROGITAN エコ家計簿 デモ</title>
+  <title>エコ家計簿 ＆ 育成デモ</title>
   <style>
     :root {
       --primary-color: #4CAF50;
       --expense-color: #f44336;
       --income-color: #2196F3;
-      --defense-color: #FF9800;
+      --saving-color: #FF9800; /* 旧 defense-color を saving-color に変更 */
       --holiday-color: #e53935;
       --bg-color: #f5f5f5;
       --card-bg: #ffffff;
@@ -48,8 +48,8 @@
     .page { display: none; padding: 16px; }
     .page.active { display: block; }
 
-    /* --- ROGITAN ホーム --- */
-    .rogitan-card {
+    /* --- メインキャラクターカード --- */
+    .partner-card {
       background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
       border-radius: 16px;
       padding: 20px;
@@ -57,7 +57,7 @@
       margin-bottom: 16px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .rogitan-avatar {
+    .partner-avatar {
       font-size: 4rem;
       margin: 10px 0;
       animation: float 3s ease-in-out infinite;
@@ -66,7 +66,7 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-8px); }
     }
-    .rogitan-speech {
+    .partner-speech {
       background: white;
       border-radius: 12px;
       padding: 10px 14px;
@@ -77,7 +77,7 @@
       display: inline-block;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-    .rogitan-speech::after {
+    .partner-speech::after {
       content: '';
       position: absolute;
       bottom: -8px;
@@ -120,7 +120,7 @@
     }
     .type-tab.active[data-type="expense"] { background: var(--expense-color); color: white; }
     .type-tab.active[data-type="income"] { background: var(--income-color); color: white; }
-    .type-tab.active[data-type="defense"] { background: var(--defense-color); color: white; }
+    .type-tab.active[data-type="saving"] { background: var(--saving-color); color: white; }
 
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
@@ -134,7 +134,7 @@
     }
     .amount-input { font-size: 1.4rem; font-weight: bold; text-align: right; }
 
-    .defense-fields {
+    .saving-fields {
       background: #fff8e1;
       border: 1px solid #ffe082;
       border-radius: 8px;
@@ -142,7 +142,7 @@
       margin-bottom: 14px;
       display: none;
     }
-    .defense-fields.active { display: block; }
+    .saving-fields.active { display: block; }
     .nutrition-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
     .btn-submit {
@@ -215,7 +215,7 @@
 
     .calendar-cell .tag-exp { color: var(--expense-color); font-size: 0.6rem; }
     .calendar-cell .tag-inc { color: var(--income-color); font-size: 0.6rem; }
-    .calendar-cell .tag-def { color: var(--defense-color); font-size: 0.6rem; font-weight: bold; }
+    .calendar-cell .tag-sav { color: var(--saving-color); font-size: 0.6rem; font-weight: bold; }
 
     /* 月間集計＆明細エリア */
     .detail-list { margin-top: 16px; background: white; border-radius: 8px; padding: 12px; }
@@ -292,17 +292,18 @@
 <body>
 
 <div class="app-container">
-  <div class="app-header" id="pageTitle">ホーム (ROGITAN)</div>
+  <div class="app-header" id="pageTitle">ホーム</div>
 
   <div class="content-area">
 
     <!-- 1. ホーム -->
     <div id="page-home" class="page active">
-      <div class="rogitan-card">
-        <div class="rogitan-speech" id="rogitanTalk">「今日もついで買いを我慢して、ボクを育てるロギ！」</div>
-        <div class="rogitan-avatar">🦖</div>
-        <div style="font-weight: bold; color: #2e7d32;">Lv. 4 ロギタン</div>
-        <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">次の進化まで あと 350 kcal / ¥1,800</div>
+      <div class="partner-card">
+        <div class="partner-speech" id="partnerTalk">「今日も間食をグッとこらえて、節約成功を目指そう！」</div>
+        <!-- 暫定アイコン（フクロウ・豚・蛇・カエルなどの仮枠） -->
+        <div class="partner-avatar" id="partnerAvatar">🦉</div>
+        <div style="font-weight: bold; color: #2e7d32;" id="partnerName">Lv. 4 知恵のフクロウ</div>
+        <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">次のレベルまで あと 350 kcal / ¥1,800</div>
         <div class="level-bar-bg">
           <div class="level-bar-fill"></div>
         </div>
@@ -310,17 +311,17 @@
 
       <div style="background: white; border-radius: 12px; padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-around; text-align: center;">
         <div>
-          <div style="font-size: 0.75rem; color: #666;">今月の我慢防衛</div>
-          <div style="font-size: 1.1rem; font-weight: bold; color: var(--defense-color);">¥4,200</div>
+          <div style="font-size: 0.75rem; color: #666;">今月の節約金額</div>
+          <div style="font-size: 1.1rem; font-weight: bold; color: var(--saving-color);">¥4,200</div>
         </div>
         <div style="border-left: 1px solid #eee;"></div>
         <div>
-          <div style="font-size: 0.75rem; color: #666;">カットしたカロリー</div>
+          <div style="font-size: 0.75rem; color: #666;">節約カロリー</div>
           <div style="font-size: 1.1rem; font-weight: bold; color: #d84315;">970 kcal</div>
         </div>
       </div>
 
-      <button class="btn-submit" onclick="navTo('input', '簡単入力', document.querySelectorAll('.nav-item')[1])" style="background: var(--defense-color);">🛡️ 我慢を記録する！</button>
+      <button class="btn-submit" onclick="navTo('input', '簡単入力', document.querySelectorAll('.nav-item')[1])" style="background: var(--saving-color);">🌱 節約（我慢）を記録する</button>
     </div>
 
     <!-- 2. 入力ページ -->
@@ -328,7 +329,7 @@
       <div class="type-tabs">
         <div class="type-tab active" data-type="expense" onclick="switchType('expense')">支出</div>
         <div class="type-tab" data-type="income" onclick="switchType('income')">収入</div>
-        <div class="type-tab" data-type="defense" onclick="switchType('defense')">我慢(エコ)</div>
+        <div class="type-tab" data-type="saving" onclick="switchType('saving')">節約</div>
       </div>
 
       <form id="logForm" onsubmit="saveLog(event)">
@@ -342,8 +343,8 @@
           <select id="inputCategory" class="form-control"></select>
         </div>
 
-        <div id="defenseFields" class="defense-fields">
-          <div style="font-size: 0.85rem; font-weight: bold; color: #d84315; margin-bottom: 8px;">🛡️ 我慢できた内容（任意入力）</div>
+        <div id="savingFields" class="saving-fields">
+          <div style="font-size: 0.85rem; font-weight: bold; color: #d84315; margin-bottom: 8px;">🌱 節約・我慢した内容（任意）</div>
           <div class="nutrition-grid">
             <div>
               <label style="font-size:0.75rem; color:#666;">カロリー(kcal)</label>
@@ -367,7 +368,7 @@
 
         <div class="form-group">
           <label>メモ (任意)</label>
-          <input type="text" id="inputMemo" class="form-control" placeholder="例: コンビニのポテチ">
+          <input type="text" id="inputMemo" class="form-control" placeholder="例: コンビニのスイーツを我慢">
         </div>
 
         <button type="submit" class="btn-submit">記録する</button>
@@ -396,24 +397,24 @@
             <div class="sum-val" id="sumIncome" style="color: var(--income-color);">¥0</div>
           </div>
           <div class="summary-item">
-            <div class="sum-title">今月の我慢(防衛)</div>
-            <div class="sum-val" id="sumDefense" style="color: var(--defense-color);">¥0</div>
+            <div class="sum-title">今月の節約</div>
+            <div class="sum-val" id="sumSaving" style="color: var(--saving-color);">¥0</div>
           </div>
         </div>
 
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;" id="selectedDateTitle">7月全体のまとめ</div>
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;" id="selectedDateTitle">7月全体の明細</div>
         <div id="detailListContent"></div>
       </div>
     </div>
 
-    <!-- 4. 設定（カテゴリー管理）ページ -->
+    <!-- 4. 設定ページ -->
     <div id="page-settings" class="page">
       <h3 style="font-size: 1rem; margin-bottom: 12px;">カテゴリーの編集・管理</h3>
       
       <div class="type-tabs">
         <div class="type-tab active" data-type="expense" onclick="switchSettingType('expense')">支出用</div>
         <div class="type-tab" data-type="income" onclick="switchSettingType('income')">収入用</div>
-        <div class="type-tab" data-type="defense" onclick="switchSettingType('defense')">我慢用</div>
+        <div class="type-tab" data-type="saving" onclick="switchSettingType('saving')">節約用</div>
       </div>
 
       <div class="add-cat-box">
@@ -428,8 +429,8 @@
 
   <!-- 下部ナビゲーション -->
   <div class="bottom-nav">
-    <div class="nav-item active" onclick="navTo('home', 'ホーム (ROGITAN)', this)">
-      <div class="nav-icon">🦖</div>
+    <div class="nav-item active" onclick="navTo('home', 'ホーム', this)">
+      <div class="nav-icon">🏡</div>
       <div>ホーム</div>
     </div>
     <div class="nav-item" onclick="navTo('input', '簡単入力', this)">
@@ -457,18 +458,18 @@
   let categories = {
     expense: ['食材費（家）', '外食費', '日用品', '交通費', '娯楽'],
     income: ['給与', '副収入', '臨時収入'],
-    defense: ['ついで買い我慢', '外食回避自炊', 'スイーツ我慢', 'サブスク解約']
+    saving: ['ついで買い我慢', '外食回避自炊', 'スイーツ我慢', 'サブスク解約']
   };
 
   const sampleLogs = [
     { date: '2026-05-03', type: 'expense', category: '娯楽', amount: 3200, memo: 'GWおでかけ' },
-    { date: '2026-06-15', type: 'defense', category: 'ついで買い我慢', amount: 500, kcal: 250, memo: '先月の我慢テスト' },
+    { date: '2026-06-15', type: 'saving', category: 'ついで買い我慢', amount: 500, kcal: 250, memo: '先月の節約テスト' },
     { date: '2026-07-20', type: 'expense', category: '食材費（家）', amount: 2580, memo: 'スーパー買い出し' },
-    { date: '2026-07-20', type: 'defense', category: '外食回避自炊', amount: 1200, kcal: 650, carb: 80, fat: 20, memo: '夜のカツ丼我慢して自炊' },
+    { date: '2026-07-20', type: 'saving', category: '外食回避自炊', amount: 1200, kcal: 650, carb: 80, fat: 20, memo: '夜のカツ丼我慢して自炊' },
     { date: '2026-07-21', type: 'expense', category: '外食費', amount: 950, memo: 'ランチ' },
-    { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' },
+    { date: '2026-07-21', type: 'saving', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' },
     { date: '2026-09-21', type: 'expense', category: '外食費', amount: 1500, memo: '敬老の日ランチ' },
-    { date: '2026-09-22', type: 'defense', category: 'ついで買い我慢', amount: 400, kcal: 200, memo: '国民の休日ドトールガマン' }
+    { date: '2026-09-22', type: 'saving', category: 'ついで買い我慢', amount: 400, kcal: 200, memo: '国民の休日カフェ我慢' }
   ];
 
   /* --- 国民の祝日計算 --- */
@@ -550,7 +551,7 @@
     document.querySelectorAll('#page-input .type-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.type === type);
     });
-    document.getElementById('defenseFields').classList.toggle('active', type === 'defense');
+    document.getElementById('savingFields').classList.toggle('active', type === 'saving');
     updateCategoryDropdown();
   }
 
@@ -583,12 +584,12 @@
 
     const logData = { date, type: currentType, category, amount: Number(amount), memo };
 
-    if (currentType === 'defense') {
+    if (currentType === 'saving') {
       logData.kcal = document.getElementById('inputKcal').value || 0;
       logData.carb = document.getElementById('inputCarb').value || 0;
       logData.fat = document.getElementById('inputFat').value || 0;
 
-      document.getElementById('rogitanTalk').textContent = `「素晴らしいロギ！${logData.kcal}kcalも防衛したロギね！」`;
+      document.getElementById('partnerTalk').textContent = `「素晴らしい！${logData.kcal}kcalの節約に成功したよ！」`;
     }
 
     sampleLogs.push(logData);
@@ -603,7 +604,7 @@
     
     renderCalendar();
     showDailyDetail(date);
-    navTo('home', 'ホーム (ROGITAN)', document.querySelectorAll('.nav-item')[0]);
+    navTo('home', 'ホーム', document.querySelectorAll('.nav-item')[0]);
   }
 
   function changeMonth(diff) {
@@ -664,7 +665,6 @@
       if (holidayName) cellCls += ' is-holiday';
       cell.className = cellCls;
       
-      // 日付タップでその日の明細を表示
       cell.onclick = () => showDailyDetail(dateStr);
 
       let dayHtml = `<div class="day-num">${day}</div>`;
@@ -676,43 +676,37 @@
       dayLogs.forEach(l => {
         if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
         if(l.type === 'income') dayHtml += `<div class="tag-inc">+¥${l.amount}</div>`;
-        if(l.type === 'defense') dayHtml += `<div class="tag-def">🛡¥${l.amount}</div>`;
+        if(l.type === 'saving') dayHtml += `<div class="tag-sav">🌱¥${l.amount}</div>`;
       });
 
       cell.innerHTML = dayHtml;
       grid.appendChild(cell);
     }
 
-    // 月全体のサマリーと一覧の更新
     updateMonthlySummary();
   }
 
-  /* --- 今月全体の集計と表示 --- */
   function updateMonthlySummary() {
     const mStr = viewMonth < 10 ? '0' + viewMonth : viewMonth;
     const monthPrefix = `${viewYear}-${mStr}`;
     
-    // 該当月のデータだけを抽出
     const monthlyLogs = sampleLogs.filter(l => l.date.startsWith(monthPrefix));
 
-    let sumExp = 0, sumInc = 0, sumDef = 0;
+    let sumExp = 0, sumInc = 0, sumSav = 0;
     monthlyLogs.forEach(l => {
       if (l.type === 'expense') sumExp += l.amount;
       if (l.type === 'income') sumInc += l.amount;
-      if (l.type === 'defense') sumDef += l.amount;
+      if (l.type === 'saving') sumSav += l.amount;
     });
 
-    // 上部サマリーの数値を更新
     document.getElementById('sumExpense').textContent = `¥${sumExp.toLocaleString()}`;
     document.getElementById('sumIncome').textContent = `¥${sumInc.toLocaleString()}`;
-    document.getElementById('sumDefense').textContent = `¥${sumDef.toLocaleString()}`;
+    document.getElementById('sumSaving').textContent = `¥${sumSav.toLocaleString()}`;
 
-    // 下部タイトルとリストを「月間全体」に更新
     document.getElementById('selectedDateTitle').textContent = `${viewMonth}月全体の明細`;
     renderLogList(monthlyLogs);
   }
 
-  /* --- 特定の日付タップ時の明細表示 --- */
   function showDailyDetail(dateStr) {
     const dayLogs = sampleLogs.filter(l => l.date === dateStr);
     const d = new Date(dateStr);
@@ -723,7 +717,6 @@
     renderLogList(dayLogs);
   }
 
-  /* --- 明細リストを描画する共通処理 --- */
   function renderLogList(logs) {
     const container = document.getElementById('detailListContent');
     container.innerHTML = '';
@@ -733,17 +726,16 @@
       return;
     }
 
-    // 日付順にソート（新しい順）
     logs.sort((a, b) => b.date.localeCompare(a.date));
 
     logs.forEach(l => {
       const item = document.createElement('div');
       item.className = 'detail-item';
-      const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '我慢';
-      const color = l.type === 'expense' ? 'var(--expense-color)' : l.type === 'income' ? 'var(--income-color)' : 'var(--defense-color)';
+      const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '節約';
+      const color = l.type === 'expense' ? 'var(--expense-color)' : l.type === 'income' ? 'var(--income-color)' : 'var(--saving-color)';
       
       let subInfo = l.memo || '';
-      if (l.type === 'defense' && (l.kcal > 0 || l.carb > 0 || l.fat > 0)) {
+      if (l.type === 'saving' && (l.kcal > 0 || l.carb > 0 || l.fat > 0)) {
         subInfo += ` (${l.kcal || 0}kcal / 糖質:${l.carb || 0}g / 脂質:${l.fat || 0}g)`;
       }
 
@@ -754,14 +746,13 @@
           <div class="tag-sub">${subInfo}</div>
         </div>
         <div style="font-weight:bold; color:${color}">
-          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🛡 '}¥${l.amount.toLocaleString()}
+          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🌱 '}¥${l.amount.toLocaleString()}
         </div>
       `;
       container.appendChild(item);
     });
   }
 
-  /* --- カテゴリー設定機能 --- */
   function switchSettingType(type) {
     settingType = type;
     document.querySelectorAll('#page-settings .type-tab').forEach(tab => {
