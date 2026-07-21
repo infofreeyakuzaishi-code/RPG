@@ -3,391 +3,424 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>エコダイエット - 育成デモ</title>
+  <title>ROGITAN エコ家計簿 デモ</title>
   <style>
     :root {
-      --bg-color: #f4f7f6;
+      --primary-color: #4CAF50;
+      --expense-color: #f44336;
+      --income-color: #2196F3;
+      --defense-color: #FF9800;
+      --bg-color: #f5f5f5;
       --card-bg: #ffffff;
-      --primary: #4caf50;
-      --primary-hover: #45a049;
-      --text: #333333;
-      --accent: #ff9800;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      padding: 16px;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #e0e0e0; display: flex; justify-content: center; min-height: 100vh; }
+    
+    /* スマホ画面風コンテナ */
     .app-container {
       width: 100%;
-      max-width: 400px;
-      background: var(--card-bg);
-      border-radius: 20px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      padding: 20px;
+      max-width: 414px;
+      height: 100vh;
+      background-color: var(--bg-color);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
 
-    /* ヘッダー・ステータス */
-    .header {
+    /* ヘッダー */
+    .app-header {
+      background-color: var(--card-bg);
+      padding: 12px 16px;
       text-align: center;
-    }
-    .month-badge {
-      font-size: 0.8rem;
-      background: #e8f5e9;
-      color: var(--primary);
-      padding: 4px 12px;
-      border-radius: 12px;
       font-weight: bold;
-    }
-    .stats-card {
-      display: flex;
-      justify-content: space-around;
-      background: #fafafa;
-      padding: 12px;
-      border-radius: 12px;
-      margin-top: 10px;
-      border: 1px solid #eeeeee;
-    }
-    .stat-item {
-      text-align: center;
-    }
-    .stat-label {
-      font-size: 0.75rem;
-      color: #777;
-    }
-    .stat-value {
       font-size: 1.1rem;
-      font-weight: bold;
-      color: var(--primary);
+      border-bottom: 1px solid #ddd;
+      color: #333;
     }
 
-    /* キャラクター表示エリア */
-    .character-stage {
-      background: linear-gradient(180deg, #e3f2fd 0%, #ffffff 100%);
-      border-radius: 16px;
-      padding: 24px 16px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid #e0e0e0;
+    /* メインコンテンツ表示エリア */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 70px;
     }
 
-    /* 吹き出し */
-    .speech-bubble {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #444;
-      display: inline-block;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      position: relative;
-    }
-    .speech-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 8px 8px 0;
-      border-style: solid;
-      border-color: #ffffff transparent;
-    }
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
 
-    /* キャラクターのアニメーション（ふわふわ浮く効果） */
-    .char-avatar {
-      font-size: 72px;
-      user-select: none;
-      display: inline-block;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-10px) rotate(2deg); }
-      100% { transform: translateY(0px) rotate(0deg); }
-    }
-
-    /* 喜びアニメーション */
-    .char-avatar.happy {
-      animation: bounce 0.6s ease;
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-20px) scale(1.15); }
-    }
-
-    .exp-bar-container {
-      width: 100%;
-      background: #e0e0e0;
-      height: 10px;
-      border-radius: 5px;
-      margin-top: 12px;
-      overflow: hidden;
-    }
-    .exp-bar {
-      width: 25%;
-      height: 100%;
-      background: var(--primary);
-      transition: width 0.4s ease;
-    }
-
-    /* タブ切り替え */
-    .tab-buttons {
+    /* --- 入力画面スタイル --- */
+    .type-tabs {
       display: flex;
-      gap: 8px;
+      background: #e0e0e0;
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 16px;
     }
-    .tab-btn {
+    .type-tab {
       flex: 1;
       padding: 10px;
-      border: none;
-      background: #eee;
-      border-radius: 10px;
+      text-align: center;
       font-weight: bold;
-      color: #666;
+      border-radius: 6px;
       cursor: pointer;
+      font-size: 0.9rem;
+      color: #666;
     }
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
-    }
+    .type-tab.active[data-type="expense"] { background: var(--expense-color); color: white; }
+    .type-tab.active[data-type="income"] { background: var(--income-color); color: white; }
+    .type-tab.active[data-type="defense"] { background: var(--defense-color); color: white; }
 
-    /* 入力フォーム */
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .input-field {
-      padding: 10px 12px;
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
+    .form-control {
+      width: 100%;
+      padding: 12px;
       border: 1px solid #ccc;
       border-radius: 8px;
-      font-size: 0.95rem;
+      font-size: 1rem;
+      background: var(--card-bg);
     }
-    .action-btn {
-      background: var(--primary);
+    .amount-input { font-size: 1.5rem; font-weight: bold; text-align: right; }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary-color);
       color: white;
       border: none;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
       font-weight: bold;
       cursor: pointer;
-      transition: background 0.2s;
-    }
-    .action-btn:hover {
-      background: var(--primary-hover);
+      margin-top: 10px;
     }
 
-    /* 1日評価ボタン群 */
-    .eval-buttons {
+    /* --- カレンダー画面スタイル --- */
+    .month-header {
       display: flex;
-      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: bold;
     }
-    .eval-btn {
-      flex: 1;
-      padding: 12px 8px;
-      border: 1px solid #ddd;
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      background: #ccc;
+      border: 1px solid #ccc;
       border-radius: 8px;
+      overflow: hidden;
+    }
+    .calendar-day-head {
+      background: #eee;
+      text-align: center;
+      padding: 6px 0;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .calendar-cell {
       background: white;
-      font-size: 0.85rem;
+      min-height: 52px;
+      padding: 2px;
+      font-size: 0.75rem;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+    .calendar-cell .day-num { font-weight: bold; margin-bottom: 2px; }
+    .calendar-cell .tag-exp { color: var(--expense-color); font-size: 0.65rem; }
+    .calendar-cell .tag-inc { color: var(--income-color); font-size: 0.65rem; }
+    .calendar-cell .tag-def { color: var(--defense-color); font-size: 0.65rem; font-weight: bold; }
+
+    /* 日別明細リスト */
+    .detail-list { margin-top: 16px; background: white; border-radius: 8px; padding: 12px; }
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9rem;
+    }
+    .detail-item:last-child { border-bottom: none; }
+
+    /* --- グラフ画面スタイル --- */
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .bar-chart-row { margin-bottom: 12px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
+    .bar-bg { background: #eee; height: 12px; border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; }
+
+    /* 下部ナビゲーションバー */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 60px;
+      background: var(--card-bg);
+      border-top: 1px solid #ddd;
+      display: flex;
+    }
+    .nav-item {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #888;
+      cursor: pointer;
     }
-    .eval-btn:hover {
-      border-color: var(--primary);
-      background: #f1f8e9;
-    }
+    .nav-item.active { color: var(--primary-color); font-weight: bold; }
+    .nav-icon { font-size: 1.2rem; margin-bottom: 2px; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-  <!-- ヘッダー -->
-  <div class="header">
-    <span class="month-badge">7月のタマゴ 🥚</span>
-    <div class="stats-card">
-      <div class="stat-item">
-        <div class="stat-label">今月の削減金額</div>
-        <div class="stat-value" id="total-money">¥1,250</div>
+  <div class="app-header" id="pageTitle">簡単入力</div>
+
+  <div class="content-area">
+    
+    <div id="page-input" class="page active">
+      <div class="type-tabs">
+        <div class="type-tab active" data-type="expense" onclick="switchType('expense')">支出</div>
+        <div class="type-tab" data-type="income" onclick="switchType('income')">収入</div>
+        <div class="type-tab" data-type="defense" onclick="switchType('defense')">我慢(エコ)</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">削減カロリー</div>
-        <div class="stat-value" id="total-kcal">840 kcal</div>
+
+      <form id="logForm" onsubmit="saveLog(event)">
+        <div class="form-group">
+          <label>金額 (円)</label>
+          <input type="number" id="inputAmount" class="form-control amount-input" placeholder="0" required>
+        </div>
+
+        <div class="form-group">
+          <label>カテゴリー</label>
+          <select id="inputCategory" class="form-control">
+            </select>
+        </div>
+
+        <div class="form-group">
+          <label>日付</label>
+          <input type="date" id="inputDate" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>メモ (任意)</label>
+          <input type="text" id="inputMemo" class="form-control" placeholder="例: スーパー、コンビニ我慢">
+        </div>
+
+        <button type="submit" class="btn-submit">記録する</button>
+      </form>
+    </div>
+
+    <div id="page-calendar" class="page">
+      <div class="month-header">
+        <span>2026年 7月</span>
+        <span style="font-size: 0.85rem; color: #666;">今月の我慢: <b style="color: var(--defense-color);">¥4,200</b></span>
+      </div>
+      
+      <div class="calendar-grid" id="calendarGrid">
+        </div>
+
+      <div class="detail-list">
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;" id="selectedDateTitle">7月21日の明細</div>
+        <div id="detailListContent">
+          </div>
       </div>
     </div>
-  </div>
 
-  <!-- キャラクター表示（アニメーション付き） -->
-  <div class="character-stage">
-    <div class="speech-bubble" id="speech">「今日も我慢できた？応援してるよ！」</div>
-    <div>
-      <span class="char-avatar" id="avatar">🥚</span>
+    <div id="page-chart" class="page">
+      <div class="summary-card">
+        <h3 style="font-size: 1rem; margin-bottom: 12px;">今月の収支・防衛バランス</h3>
+        <div style="display: flex; justify-content: space-around; text-align: center;">
+          <div><div style="font-size: 0.75rem; color: #666;">収入</div><div style="color: var(--income-color); font-weight: bold;">¥250,000</div></div>
+          <div><div style="font-size: 0.75rem; color: #666;">支出</div><div style="color: var(--expense-color); font-weight: bold;">¥84,500</div></div>
+          <div><div style="font-size: 0.75rem; color: #666;">我慢防衛</div><div style="color: var(--defense-color); font-weight: bold;">¥4,200</div></div>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <h3 style="font-size: 0.9rem; margin-bottom: 12px;">支出カテゴリー内訳</h3>
+        <div class="bar-chart-row">
+          <div class="bar-label"><span>食費・スーパー</span><span>¥45,000</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width: 53%; background: var(--expense-color);"></div></div>
+        </div>
+        <div class="bar-chart-row">
+          <div class="bar-label"><span>外食費</span><span>¥22,000</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width: 26%; background: var(--expense-color);"></div></div>
+        </div>
+        <div class="bar-chart-row">
+          <div class="bar-label"><span>日用品</span><span>¥17,500</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width: 21%; background: var(--expense-color);"></div></div>
+        </div>
+      </div>
     </div>
-    <div style="font-size: 0.8rem; color: #666; margin-top: 4px;" id="char-name">状態: まだ見ぬタマゴ</div>
-    <div class="exp-bar-container">
-      <div class="exp-bar" id="exp-bar"></div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="navTo('input', '簡単入力', this)">
+      <div class="nav-icon">✏️</div>
+      <div>入力</div>
     </div>
-  </div>
-
-  <!-- 操作タブ -->
-  <div class="tab-buttons">
-    <button class="tab-btn active" onclick="switchTab('tab-item')">② 買おうとしてやめた</button>
-    <button class="tab-btn" onclick="switchTab('tab-eval')">③ 1日の評価</button>
-  </div>
-
-  <!-- ② 我慢ログ入力フォーム -->
-  <div id="tab-item" class="form-group">
-    <input type="text" id="item-name" class="input-field" placeholder="やめたもの（例: コンビニスイーツ）">
-    <div style="display: flex; gap: 8px;">
-      <input type="number" id="item-price" class="input-field" style="flex:1" placeholder="金額 (円)">
-      <input type="number" id="item-kcal" class="input-field" style="flex:1" placeholder="カロリー (kcal)">
+    <div class="nav-item" onclick="navTo('calendar', '収支カレンダー', this)">
+      <div class="nav-icon">📅</div>
+      <div>カレンダー</div>
     </div>
-    <button class="action-btn" onclick="addLog()">我慢した！(加点＆記録)</button>
-  </div>
-
-  <!-- ③ 1日評価フォーム（非表示初期状態） -->
-  <div id="tab-eval" class="form-group" style="display: none;">
-    <div style="font-size: 0.85rem; color: #555; text-align: center;">今日のマインドはどうだった？</div>
-    <div class="eval-buttons">
-      <button class="eval-btn" onclick="submitEval('great')">
-        <span style="font-size: 1.2rem;">🛡️</span>
-        <b>無駄遣いゼロ</b>
-        <span style="font-size: 0.7rem; color: #777;">+100 EXP</span>
-      </button>
-      <button class="eval-btn" onclick="submitEval('good')">
-        <span style="font-size: 1.2rem;">✨</span>
-        <b>最高に節約</b>
-        <span style="font-size: 0.7rem; color: #777;">+150 EXP</span>
-      </button>
-      <button class="eval-btn" onclick="submitEval('normal')">
-        <span style="font-size: 1.2rem;">🙂</span>
-        <b>普通に過ごした</b>
-        <span style="font-size: 0.7rem; color: #777;">+50 EXP</span>
-      </button>
+    <div class="nav-item" onclick="navTo('chart', '分析・レポート', this)">
+      <div class="nav-icon">📊</div>
+      <div>グラフ</div>
     </div>
   </div>
 </div>
 
 <script>
-  // 状態管理変数
-  let totalMoney = 1250;
-  let totalKcal = 840;
-  let exp = 25; // ％表記
+  // ダミー初期データ
+  let currentType = 'expense';
+  const categories = {
+    expense: ['食材費（家）', '外食費', '日用品', '交通費', '娯楽'],
+    income: ['給与', '副収入', '臨時収入'],
+    defense: ['ついで買い我慢', '外食回避自炊', '徒歩・自転車移動', 'サブスク見直し']
+  };
 
-  const avatars = [
-    { threshold: 0, emoji: '🥚', name: '状態: タマゴ', speech: '「今日も我慢できた？応援してるよ！」' },
-    { threshold: 40, emoji: '🐣', name: '状態: ひよこ（進化1段階）', speech: '「殻が破れたよ！順調だね！」' },
-    { threshold: 80, emoji: '🐥', name: '状態: はがねヒヨコ（最終形間近）', speech: '「無駄遣いセンサー作動中！素晴らしい防御力！」' }
+  const sampleLogs = [
+    { date: '2026-07-20', type: 'expense', category: '食材費（家）', amount: 2580, memo: 'スーパー買い出し' },
+    { date: '2026-07-20', type: 'defense', category: '外食回避自炊', amount: 1200, memo: '夜の外食我慢して自炊' },
+    { date: '2026-07-21', type: 'expense', category: '外食費', amount: 950, memo: 'ランチ' },
+    { date: '2026-07-21', type: 'defense', category: 'ついで買い我慢', amount: 300, memo: 'コンビニスイーツ我慢' }
   ];
 
-  // タブ切り替え
-  function switchTab(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    if(tabId === 'tab-item') {
-      document.querySelectorAll('.tab-btn')[0].classList.add('active');
-      document.getElementById('tab-item').style.display = 'flex';
-      document.getElementById('tab-eval').style.display = 'none';
-    } else {
-      document.querySelectorAll('.tab-btn')[1].classList.add('active');
-      document.getElementById('tab-item').style.display = 'none';
-      document.getElementById('tab-eval').style.display = 'flex';
-    }
+  // 初期化
+  window.onload = () => {
+    document.getElementById('inputDate').valueAsDate = new Date();
+    updateCategoryDropdown();
+    renderCalendar();
+    showDetail('2026-07-21');
+  };
+
+  // タブ切替 (支出/収入/我慢)
+  function switchType(type) {
+    currentType = type;
+    document.querySelectorAll('.type-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    updateCategoryDropdown();
   }
 
-  // 喜ぶアニメーション＆セリフ更新
-  function triggerHappiness(speechText) {
-    const avatar = document.getElementById('avatar');
-    const speech = document.getElementById('speech');
+  // カテゴリードロップダウンの更新
+  function updateCategoryDropdown() {
+    const select = document.getElementById('inputCategory');
+    select.innerHTML = '';
+    categories[currentType].forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      select.appendChild(opt);
+    });
+  }
+
+  // ページ切り替え
+  function navTo(pageId, title, element) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    document.getElementById('pageTitle').textContent = title;
+
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    element.classList.add('active');
+  }
+
+  // ログ保存 (模擬)
+  function saveLog(e) {
+    e.preventDefault();
+    const amount = document.getElementById('inputAmount').value;
+    const category = document.getElementById('inputCategory').value;
+    const date = document.getElementById('inputDate').value;
+    const memo = document.getElementById('inputMemo').value;
+
+    sampleLogs.push({ date, type: currentType, category, amount: Number(amount), memo });
     
-    avatar.classList.remove('happy');
-    void avatar.offsetWidth; // リフロー発生させてアニメーション再適用
-    avatar.classList.add('happy');
-
-    speech.innerText = speechText;
+    alert(`【${currentType === 'expense' ? '支出' : currentType === 'income' ? '収入' : '我慢'}】\n${category}: ¥${amount} を記録しました！`);
+    
+    // フォームリセット
+    document.getElementById('inputAmount').value = '';
+    document.getElementById('inputMemo').value = '';
+    renderCalendar();
   }
 
-  // 経験値加算と進化ロジック
-  function addExp(amount) {
-    exp = Math.min(100, exp + amount);
-    document.getElementById('exp-bar').style.width = exp + '%';
+  // 簡易カレンダー描画
+  function renderCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
 
-    // 進化チェック
-    let currentStage = avatars[0];
-    for (let stage of avatars) {
-      if (exp >= stage.threshold) {
-        currentStage = stage;
-      }
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    days.forEach(d => {
+      const head = document.createElement('div');
+      head.className = 'calendar-day-head';
+      head.textContent = d;
+      grid.appendChild(head);
+    });
+
+    // 7月1日〜31日の簡易生成
+    for (let i = 1; i <= 31; i++) {
+      const dateStr = `2026-07-${i < 10 ? '0' + i : i}`;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell';
+      cell.onclick = () => showDetail(dateStr);
+
+      let dayHtml = `<div class="day-num">${i}</div>`;
+      
+      // 当日のログを集計
+      const dayLogs = sampleLogs.filter(l => l.date === dateStr);
+      dayLogs.forEach(l => {
+        if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
+        if(l.type === 'income') dayHtml += `<div class="tag-inc">+¥${l.amount}</div>`;
+        if(l.type === 'defense') dayHtml += `<div class="tag-def">🛡¥${l.amount}</div>`;
+      });
+
+      cell.innerHTML = dayHtml;
+      grid.appendChild(cell);
     }
-    document.getElementById('avatar').innerText = currentStage.emoji;
-    document.getElementById('char-name').innerText = currentStage.name;
-    return currentStage.speech;
   }
 
-  // ② 我慢ログの追加
-  function addLog() {
-    const priceInput = document.getElementById('item-price');
-    const kcalInput = document.getElementById('item-kcal');
-    const nameInput = document.getElementById('item-name');
+  // 日別明細の表示
+  function showDetail(dateStr) {
+    document.getElementById('selectedDateTitle').textContent = `${dateStr} の明細`;
+    const container = document.getElementById('detailListContent');
+    container.innerHTML = '';
 
-    const price = parseInt(priceInput.value) || 0;
-    const kcal = parseInt(kcalInput.value) || 0;
-
-    if (price === 0 && kcal === 0) {
-      alert('金額またはカロリーを入力してください！');
+    const dayLogs = sampleLogs.filter(l => l.date === dateStr);
+    if (dayLogs.length === 0) {
+      container.innerHTML = '<div style="color:#999; font-size:0.85rem;">記録はありません</div>';
       return;
     }
 
-    totalMoney += price;
-    totalKcal += kcal;
-
-    document.getElementById('total-money').innerText = '¥' + totalMoney.toLocaleString();
-    document.getElementById('total-kcal').innerText = totalKcal.toLocaleString() + ' kcal';
-
-    const defaultSpeech = addExp(15); // 我慢ログで15%経験値UP
-    triggerHappiness(`「${nameInput.value || '我慢'}」を回避！ナイス防衛！(+15 EXP)`);
-
-    // フォームリセット
-    nameInput.value = '';
-    priceInput.value = '';
-    kcalInput.value = '';
-  }
-
-  // ③ 1日評価の送信
-  function submitEval(type) {
-    let gainedExp = 50;
-    let msg = '「明日もこの調子でいこう！」';
-
-    if (type === 'great') {
-      gainedExp = 100;
-      msg = '「無駄遣いゼロ！完璧なマインドだね！」';
-    } else if (type === 'good') {
-      gainedExp = 150;
-      msg = '「最高レベルの節約達成！経験値ガッポリ！」';
-    }
-
-    addExp(gainedExp);
-    triggerHappiness(msg);
+    dayLogs.forEach(l => {
+      const item = document.createElement('div');
+      item.className = 'detail-item';
+      
+      const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '我慢';
+      const color = l.type === 'expense' ? 'var(--expense-color)' : l.type === 'income' ? 'var(--income-color)' : 'var(--defense-color)';
+      
+      item.innerHTML = `
+        <div>
+          <span style="font-weight:bold; color:${color}">[${typeLabel}] ${l.category}</span>
+          <div style="font-size:0.75rem; color:#666;">${l.memo || ''}</div>
+        </div>
+        <div style="font-weight:bold; color:${color}">
+          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🛡 '}¥${l.amount}
+        </div>
+      `;
+      container.appendChild(item);
+    });
   }
 </script>
 
