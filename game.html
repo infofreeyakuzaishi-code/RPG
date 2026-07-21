@@ -157,14 +157,27 @@
       cursor: pointer;
     }
 
-    /* --- カレンダー --- */
+    /* --- カレンダー（月移動機能追加） --- */
     .month-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
-      font-weight: bold;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 8px;
     }
+    .month-nav-btn {
+      background: #eee;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .month-nav-btn:hover { background: #ddd; }
+    
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -193,7 +206,7 @@
       display: flex;
       flex-direction: column;
     }
-    .calendar-cell.other-month { background: #fafafa; color: #ccc; }
+    .calendar-cell.other-month { background: #fafafa; color: #ccc; cursor: default; }
     .calendar-cell .day-num { font-weight: bold; margin-bottom: 2px; }
     .calendar-cell.is-sun .day-num,
     .calendar-cell.is-holiday .day-num { color: var(--holiday-color); }
@@ -237,7 +250,7 @@
     .btn-delete { background: #f44336; color: white; }
     .add-cat-box { display: flex; gap: 8px; margin-top: 12px; }
 
-    /* --- 下部ナビゲーション（4項目対応） --- */
+    /* --- 下部ナビゲーション --- */
     .bottom-nav {
       position: absolute;
       bottom: 0;
@@ -346,11 +359,12 @@
       </form>
     </div>
 
-    <!-- 3. カレンダーページ -->
+    <!-- 3. カレンダーページ（月移動ヘッダー付き） -->
     <div id="page-calendar" class="page">
       <div class="month-header">
-        <span>2026年 7月</span>
-        <span style="font-size: 0.85rem; color: #666;">今月の我慢: <b style="color: var(--defense-color);">¥4,200</b></span>
+        <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 前月</button>
+        <span id="currentMonthTitle" style="font-size: 1.05rem; font-weight: bold;">2026年 7月</span>
+        <button class="month-nav-btn" onclick="changeMonth(1)">次月 ▶</button>
       </div>
       
       <div class="calendar-grid" id="calendarGrid"></div>
@@ -381,7 +395,7 @@
 
   </div>
 
-  <!-- 下部ナビゲーション（4つのタブ） -->
+  <!-- 下部ナビゲーション -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="navTo('home', 'ホーム (ROGITAN)', this)">
       <div class="nav-icon">🦖</div>
@@ -406,6 +420,10 @@
   let currentType = 'expense';
   let settingType = 'expense';
 
+  // カレンダー管理用データ（初期表示：2026年7月）
+  let viewYear = 2026;
+  let viewMonth = 7; // 1-12
+
   let categories = {
     expense: ['食材費（家）', '外食費', '日用品', '交通費', '娯楽'],
     income: ['給与', '副収入', '臨時収入'],
@@ -413,13 +431,19 @@
   };
 
   const sampleLogs = [
+    { date: '2026-06-15', type: 'defense', category: 'ついで買い我慢', amount: 500, kcal: 250, memo: '先月の我慢テスト' },
     { date: '2026-07-20', type: 'expense', category: '食材費（家）', amount: 2580, memo: 'スーパー買い出し' },
     { date: '2026-07-20', type: 'defense', category: '外食回避自炊', amount: 1200, kcal: 650, carb: 80, fat: 20, memo: '夜のカツ丼我慢して自炊' },
     { date: '2026-07-21', type: 'expense', category: '外食費', amount: 950, memo: 'ランチ' },
     { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' }
   ];
 
-  const holidays2026Jul = { '2026-07-20': '海の日' };
+  // 祝日データ定義（デモ用）
+  const holidays = {
+    '2026-07-20': '海の日',
+    '2026-08-11': '山の日',
+    '2026-09-21': '敬老の日'
+  };
 
   window.onload = () => {
     document.getElementById('inputDate').value = '2026-07-21';
@@ -480,8 +504,131 @@
     
     document.getElementById('inputAmount').value = '';
     document.getElementById('inputMemo').value = '';
+
+    // 入力した日付の月にカレンダー表示を移動
+    const d = new Date(date);
+    viewYear = d.getFullYear();
+    viewMonth = d.getMonth() + 1;
+    
     renderCalendar();
+    showDetail(date);
     navTo('home', 'ホーム (ROGITAN)', document.querySelectorAll('.nav-item')[0]);
+  }
+
+  /* --- 月変更ボタンの処理 --- */
+  function changeMonth(diff) {
+    viewMonth += diff;
+    if (viewMonth < 1) {
+      viewMonth = 12;
+      viewYear--;
+    } else if (viewMonth > 12) {
+      viewMonth = 1;
+      viewYear++;
+    }
+    renderCalendar();
+  }
+
+  /* --- 動的カレンダー描画ロジック --- */
+  function renderCalendar() {
+    document.getElementById('currentMonthTitle').textContent = `${viewYear}年 ${viewMonth}月`;
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    // 曜日ヘッダー
+    const days = [
+      { name: '日', cls: 'sun' }, { name: '月', cls: '' }, { name: '火', cls: '' },
+      { name: '水', cls: '' }, { name: '木', cls: '' }, { name: '金', cls: '' }, { name: '土', cls: 'sat' }
+    ];
+    days.forEach(d => {
+      const head = document.createElement('div');
+      head.className = `calendar-day-head ${d.cls}`;
+      head.textContent = d.name;
+      grid.appendChild(head);
+    });
+
+    // 表示月の1日の曜日と最終日を取得
+    const firstDay = new Date(viewYear, viewMonth - 1, 1);
+    const lastDay = new Date(viewYear, viewMonth, 0);
+    const startDayOfWeek = firstDay.getDay(); // 0:日, 1:月...
+    const totalDays = lastDay.getDate();
+
+    // 前月の埋めコマ計算
+    const prevMonthLastDay = new Date(viewYear, viewMonth - 1, 0).getDate();
+    for (let p = startDayOfWeek - 1; p >= 0; p--) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell other-month';
+      cell.innerHTML = `<div class="day-num">${prevMonthLastDay - p}</div>`;
+      grid.appendChild(cell);
+    }
+
+    // 当月の日付コマ描画
+    for (let day = 1; day <= totalDays; day++) {
+      const dateObj = new Date(viewYear, viewMonth - 1, day);
+      const dayOfWeek = dateObj.getDay();
+      const mStr = viewMonth < 10 ? '0' + viewMonth : viewMonth;
+      const dStr = day < 10 ? '0' + day : day;
+      const dateStr = `${viewYear}-${mStr}-${dStr}`;
+
+      const cell = document.createElement('div');
+      let cellCls = 'calendar-cell';
+      if (dayOfWeek === 0) cellCls += ' is-sun';
+      if (dayOfWeek === 6) cellCls += ' is-sat';
+      if (holidays[dateStr]) cellCls += ' is-holiday';
+      cell.className = cellCls;
+      cell.onclick = () => showDetail(dateStr);
+
+      let dayHtml = `<div class="day-num">${day}</div>`;
+      if (holidays[dateStr]) {
+        dayHtml += `<div class="holiday-label">${holidays[dateStr]}</div>`;
+      }
+
+      // 当日のログ抽出
+      const dayLogs = sampleLogs.filter(l => l.date === dateStr);
+      dayLogs.forEach(l => {
+        if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
+        if(l.type === 'income') dayHtml += `<div class="tag-inc">+¥${l.amount}</div>`;
+        if(l.type === 'defense') dayHtml += `<div class="tag-def">🛡¥${l.amount}</div>`;
+      });
+
+      cell.innerHTML = dayHtml;
+      grid.appendChild(cell);
+    }
+  }
+
+  function showDetail(dateStr) {
+    document.getElementById('selectedDateTitle').textContent = `${dateStr} の明細`;
+    const container = document.getElementById('detailListContent');
+    container.innerHTML = '';
+
+    const dayLogs = sampleLogs.filter(l => l.date === dateStr);
+    if (dayLogs.length === 0) {
+      container.innerHTML = '<div style="color:#999; font-size:0.85rem;">記録はありません</div>';
+      return;
+    }
+
+    dayLogs.forEach(l => {
+      const item = document.createElement('div');
+      item.className = 'detail-item';
+      const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '我慢';
+      const color = l.type === 'expense' ? 'var(--expense-color)' : l.type === 'income' ? 'var(--income-color)' : 'var(--defense-color)';
+      
+      let subInfo = l.memo || '';
+      if (l.type === 'defense' && (l.kcal > 0 || l.carb > 0 || l.fat > 0)) {
+        subInfo += ` (${l.kcal || 0}kcal / 糖質:${l.carb || 0}g / 脂質:${l.fat || 0}g)`;
+      }
+
+      item.innerHTML = `
+        <div>
+          <span style="font-weight:bold; color:${color}">[${typeLabel}] ${l.category}</span>
+          <div class="tag-sub">${subInfo}</div>
+        </div>
+        <div style="font-weight:bold; color:${color}">
+          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🛡 '}¥${l.amount}
+        </div>
+      `;
+      container.appendChild(item);
+    });
   }
 
   /* --- カテゴリー設定機能 --- */
@@ -536,93 +683,6 @@
       renderCategoryManageList();
       updateCategoryDropdown();
     }
-  }
-
-  /* --- カレンダー描画 --- */
-  function renderCalendar() {
-    const grid = document.getElementById('calendarGrid');
-    grid.innerHTML = '';
-
-    const days = [
-      { name: '日', cls: 'sun' }, { name: '月', cls: '' }, { name: '火', cls: '' },
-      { name: '水', cls: '' }, { name: '木', cls: '' }, { name: '金', cls: '' }, { name: '土', cls: 'sat' }
-    ];
-    days.forEach(d => {
-      const head = document.createElement('div');
-      head.className = `calendar-day-head ${d.cls}`;
-      head.textContent = d.name;
-      grid.appendChild(head);
-    });
-
-    for (let p = 28; p <= 30; p++) {
-      const cell = document.createElement('div');
-      cell.className = 'calendar-cell other-month';
-      cell.innerHTML = `<div class="day-num">${p}</div>`;
-      grid.appendChild(cell);
-    }
-
-    for (let day = 1; day <= 31; day++) {
-      const dayOfWeek = (3 + (day - 1)) % 7; 
-      const dateStr = `2026-07-${day < 10 ? '0' + day : day}`;
-      
-      const cell = document.createElement('div');
-      let cellCls = 'calendar-cell';
-      if (dayOfWeek === 0) cellCls += ' is-sun';
-      if (dayOfWeek === 6) cellCls += ' is-sat';
-      if (holidays2026Jul[dateStr]) cellCls += ' is-holiday';
-      cell.className = cellCls;
-      cell.onclick = () => showDetail(dateStr);
-
-      let dayHtml = `<div class="day-num">${day}</div>`;
-      if (holidays2026Jul[dateStr]) {
-        dayHtml += `<div class="holiday-label">${holidays2026Jul[dateStr]}</div>`;
-      }
-
-      const dayLogs = sampleLogs.filter(l => l.date === dateStr);
-      dayLogs.forEach(l => {
-        if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
-        if(l.type === 'income') dayHtml += `<div class="tag-inc">+¥${l.amount}</div>`;
-        if(l.type === 'defense') dayHtml += `<div class="tag-def">🛡¥${l.amount}</div>`;
-      });
-
-      cell.innerHTML = dayHtml;
-      grid.appendChild(cell);
-    }
-  }
-
-  function showDetail(dateStr) {
-    document.getElementById('selectedDateTitle').textContent = `${dateStr} の明細`;
-    const container = document.getElementById('detailListContent');
-    container.innerHTML = '';
-
-    const dayLogs = sampleLogs.filter(l => l.date === dateStr);
-    if (dayLogs.length === 0) {
-      container.innerHTML = '<div style="color:#999; font-size:0.85rem;">記録はありません</div>';
-      return;
-    }
-
-    dayLogs.forEach(l => {
-      const item = document.createElement('div');
-      item.className = 'detail-item';
-      const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '我慢';
-      const color = l.type === 'expense' ? 'var(--expense-color)' : l.type === 'income' ? 'var(--income-color)' : 'var(--defense-color)';
-      
-      let subInfo = l.memo || '';
-      if (l.type === 'defense' && (l.kcal > 0 || l.carb > 0 || l.fat > 0)) {
-        subInfo += ` (${l.kcal || 0}kcal / 糖質:${l.carb || 0}g / 脂質:${l.fat || 0}g)`;
-      }
-
-      item.innerHTML = `
-        <div>
-          <span style="font-weight:bold; color:${color}">[${typeLabel}] ${l.category}</span>
-          <div class="tag-sub">${subInfo}</div>
-        </div>
-        <div style="font-weight:bold; color:${color}">
-          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🛡 '}¥${l.amount}
-        </div>
-      `;
-      container.appendChild(item);
-    });
   }
 </script>
 
