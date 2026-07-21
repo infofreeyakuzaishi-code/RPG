@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROGITAN エコ家計簿 デモ（カレンダー修正＆キャラ融合版）</title>
+  <title>ROGITAN エコ家計簿 デモ</title>
   <style>
     :root {
       --primary-color: #4CAF50;
@@ -48,7 +48,7 @@
     .page { display: none; padding: 16px; }
     .page.active { display: block; }
 
-    /* --- ROGITAN ホーム画面スタイル --- */
+    /* --- ROGITAN ホーム --- */
     .rogitan-card {
       background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
       border-radius: 16px;
@@ -56,7 +56,6 @@
       text-align: center;
       margin-bottom: 16px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      position: relative;
     }
     .rogitan-avatar {
       font-size: 4rem;
@@ -101,7 +100,7 @@
       width: 65%;
     }
 
-    /* --- タブ＆フォームスタイル --- */
+    /* --- タブ＆フォーム --- */
     .type-tabs {
       display: flex;
       background: #e0e0e0;
@@ -158,7 +157,7 @@
       cursor: pointer;
     }
 
-    /* --- カレンダー（正しく2026年7月に修正） --- */
+    /* --- カレンダー --- */
     .month-header {
       display: flex;
       justify-content: space-between;
@@ -216,7 +215,29 @@
     .detail-item:last-child { border-bottom: none; }
     .tag-sub { font-size: 0.75rem; color: #888; margin-top: 2px; }
 
-    /* 下部ナビゲーション */
+    /* --- カテゴリー設定 --- */
+    .cat-manage-list { margin-top: 10px; background: white; border-radius: 8px; }
+    .cat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    .cat-item:last-child { border-bottom: none; }
+    .cat-actions button {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 4px;
+    }
+    .btn-edit { background: #ffc107; color: #333; }
+    .btn-delete { background: #f44336; color: white; }
+    .add-cat-box { display: flex; gap: 8px; margin-top: 12px; }
+
+    /* --- 下部ナビゲーション（4項目対応） --- */
     .bottom-nav {
       position: absolute;
       bottom: 0;
@@ -232,24 +253,22 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: #888;
       cursor: pointer;
     }
     .nav-item.active { color: var(--primary-color); font-weight: bold; }
-    .nav-icon { font-size: 1.2rem; margin-bottom: 2px; }
+    .nav-icon { font-size: 1.1rem; margin-bottom: 2px; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-  <!-- ヘッダー -->
   <div class="app-header" id="pageTitle">ホーム (ROGITAN)</div>
 
-  <!-- メイン表示エリア -->
   <div class="content-area">
 
-    <!-- 0. ホーム（ROGITAN融合画面） -->
+    <!-- 1. ホーム -->
     <div id="page-home" class="page active">
       <div class="rogitan-card">
         <div class="rogitan-speech" id="rogitanTalk">「今日もついで買いを我慢して、ボクを育てるロギ！」</div>
@@ -276,7 +295,7 @@
       <button class="btn-submit" onclick="navTo('input', '簡単入力', document.querySelectorAll('.nav-item')[1])" style="background: var(--defense-color);">🛡️ 我慢を記録する！</button>
     </div>
 
-    <!-- 1. 入力ページ -->
+    <!-- 2. 入力ページ -->
     <div id="page-input" class="page">
       <div class="type-tabs">
         <div class="type-tab active" data-type="expense" onclick="switchType('expense')">支出</div>
@@ -327,7 +346,7 @@
       </form>
     </div>
 
-    <!-- 2. カレンダーページ -->
+    <!-- 3. カレンダーページ -->
     <div id="page-calendar" class="page">
       <div class="month-header">
         <span>2026年 7月</span>
@@ -342,9 +361,27 @@
       </div>
     </div>
 
+    <!-- 4. 設定（カテゴリー管理）ページ -->
+    <div id="page-settings" class="page">
+      <h3 style="font-size: 1rem; margin-bottom: 12px;">カテゴリーの編集・管理</h3>
+      
+      <div class="type-tabs">
+        <div class="type-tab active" data-type="expense" onclick="switchSettingType('expense')">支出用</div>
+        <div class="type-tab" data-type="income" onclick="switchSettingType('income')">収入用</div>
+        <div class="type-tab" data-type="defense" onclick="switchSettingType('defense')">我慢用</div>
+      </div>
+
+      <div class="add-cat-box">
+        <input type="text" id="newCatName" class="form-control" placeholder="新しいカテゴリー名">
+        <button onclick="addCategory()" style="padding: 0 16px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: bold;">追加</button>
+      </div>
+
+      <div class="cat-manage-list" id="catManageList"></div>
+    </div>
+
   </div>
 
-  <!-- 下部ナビゲーション -->
+  <!-- 下部ナビゲーション（4つのタブ） -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="navTo('home', 'ホーム (ROGITAN)', this)">
       <div class="nav-icon">🦖</div>
@@ -358,13 +395,18 @@
       <div class="nav-icon">📅</div>
       <div>カレンダー</div>
     </div>
+    <div class="nav-item" onclick="navTo('settings', '設定（カテゴリー管理）', this)">
+      <div class="nav-icon">⚙️</div>
+      <div>設定</div>
+    </div>
   </div>
 </div>
 
 <script>
   let currentType = 'expense';
+  let settingType = 'expense';
 
-  const categories = {
+  let categories = {
     expense: ['食材費（家）', '外食費', '日用品', '交通費', '娯楽'],
     income: ['給与', '副収入', '臨時収入'],
     defense: ['ついで買い我慢', '外食回避自炊', 'スイーツ我慢', 'サブスク解約']
@@ -377,16 +419,14 @@
     { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' }
   ];
 
-  // 日本の祝日データ（2026年7月）
-  const holidays2026Jul = {
-    '2026-07-20': '海の日'
-  };
+  const holidays2026Jul = { '2026-07-20': '海の日' };
 
   window.onload = () => {
     document.getElementById('inputDate').value = '2026-07-21';
     updateCategoryDropdown();
     renderCalendar();
     showDetail('2026-07-21');
+    renderCategoryManageList();
   };
 
   function switchType(type) {
@@ -394,7 +434,6 @@
     document.querySelectorAll('#page-input .type-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.type === type);
     });
-    
     document.getElementById('defenseFields').classList.toggle('active', type === 'defense');
     updateCategoryDropdown();
   }
@@ -433,7 +472,6 @@
       logData.carb = document.getElementById('inputCarb').value || 0;
       logData.fat = document.getElementById('inputFat').value || 0;
 
-      // ROGITANのセリフ更新（演出）
       document.getElementById('rogitanTalk').textContent = `「素晴らしいロギ！${logData.kcal}kcalも防衛したロギね！」`;
     }
 
@@ -446,7 +484,61 @@
     navTo('home', 'ホーム (ROGITAN)', document.querySelectorAll('.nav-item')[0]);
   }
 
-  // --- 2026年7月の正確なカレンダー描画 ---
+  /* --- カテゴリー設定機能 --- */
+  function switchSettingType(type) {
+    settingType = type;
+    document.querySelectorAll('#page-settings .type-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    renderCategoryManageList();
+  }
+
+  function renderCategoryManageList() {
+    const list = document.getElementById('catManageList');
+    list.innerHTML = '';
+    categories[settingType].forEach((cat, index) => {
+      const item = document.createElement('div');
+      item.className = 'cat-item';
+      item.innerHTML = `
+        <span style="font-weight:bold;">${cat}</span>
+        <div class="cat-actions">
+          <button class="btn-edit" onclick="editCategory(${index})">編集</button>
+          <button class="btn-delete" onclick="deleteCategory(${index})">削除</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function addCategory() {
+    const input = document.getElementById('newCatName');
+    const val = input.value.trim();
+    if (!val) return;
+    categories[settingType].push(val);
+    input.value = '';
+    renderCategoryManageList();
+    updateCategoryDropdown();
+  }
+
+  function editCategory(index) {
+    const oldName = categories[settingType][index];
+    const newName = prompt('新しいカテゴリー名を入力してください:', oldName);
+    if (newName && newName.trim() !== '') {
+      categories[settingType][index] = newName.trim();
+      renderCategoryManageList();
+      updateCategoryDropdown();
+    }
+  }
+
+  function deleteCategory(index) {
+    if (confirm(`「${categories[settingType][index]}」を削除しますか？`)) {
+      categories[settingType].splice(index, 1);
+      renderCategoryManageList();
+      updateCategoryDropdown();
+    }
+  }
+
+  /* --- カレンダー描画 --- */
   function renderCalendar() {
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
@@ -462,8 +554,6 @@
       grid.appendChild(head);
     });
 
-    // 2026年7月1日＝水曜日（オフセット: 3マス空白［6/28〜6/30］）
-    // 前月の穴埋め（3日間）
     for (let p = 28; p <= 30; p++) {
       const cell = document.createElement('div');
       cell.className = 'calendar-cell other-month';
@@ -471,9 +561,7 @@
       grid.appendChild(cell);
     }
 
-    // 7月1日〜31日
     for (let day = 1; day <= 31; day++) {
-      // 曜日の算出 (1日が水曜=3)
       const dayOfWeek = (3 + (day - 1)) % 7; 
       const dateStr = `2026-07-${day < 10 ? '0' + day : day}`;
       
@@ -490,7 +578,6 @@
         dayHtml += `<div class="holiday-label">${holidays2026Jul[dateStr]}</div>`;
       }
 
-      // 当日のログ
       const dayLogs = sampleLogs.filter(l => l.date === dateStr);
       dayLogs.forEach(l => {
         if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
