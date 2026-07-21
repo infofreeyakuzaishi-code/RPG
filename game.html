@@ -438,58 +438,72 @@
     { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' }
   ];
 
-  /* --- 日本の祝日判定ロジック（全月自動計算） --- */
-  function getJapaneseHoliday(year, month, day) {
-    const mStr = month < 10 ? '0' + month : month;
-    const dStr = day < 10 ? '0' + day : day;
-    const dateStr = `${year}-${mStr}-${dStr}`;
+  /* --- 単一日の「国民の祝日」名を取得する基本関数 --- */
+  function getPureNationalHoliday(year, month, day) {
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay();
 
-    // 春分・秋分の簡易計算
     const vernalEquinox = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
     const autumnalEquinox = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
 
-    // N番目の月曜日（ハッピーマンデー）判定関数
     const isNthMonday = (n) => dayOfWeek === 1 && Math.ceil(day / 7) === n;
 
-    let name = '';
-
-    // 固定祝日・ハッピーマンデー
     if (month === 1) {
-      if (day === 1) name = '元日';
-      else if (isNthMonday(2)) name = '成人の日';
+      if (day === 1) return '元日';
+      if (isNthMonday(2)) return '成人の日';
     } else if (month === 2) {
-      if (day === 11) name = '建国記念の日';
-      else if (day === 23) name = '天皇誕生日';
+      if (day === 11) return '建国記念の日';
+      if (day === 23) return '天皇誕生日';
     } else if (month === 3) {
-      if (day === vernalEquinox) name = '春分の日';
+      if (day === vernalEquinox) return '春分の日';
     } else if (month === 4) {
-      if (day === 29) name = '昭和の日';
+      if (day === 29) return '昭和の日';
     } else if (month === 5) {
-      if (day === 3) name = '憲法記念日';
-      else if (day === 4) name = 'みどもの日';
-      else if (day === 5) name = 'こどもの日';
+      if (day === 3) return '憲法記念日';
+      if (day === 4) return 'みどりの日';
+      if (day === 5) return 'こどもの日';
     } else if (month === 7) {
-      if (isNthMonday(3)) name = '海の日';
+      if (isNthMonday(3)) return '海の日';
     } else if (month === 8) {
-      if (day === 11) name = '山の日';
+      if (day === 11) return '山の日';
     } else if (month === 9) {
-      if (isNthMonday(3)) name = '敬老の日';
-      else if (day === autumnalEquinox) name = '秋分の日';
+      if (isNthMonday(3)) return '敬老の日';
+      if (day === autumnalEquinox) return '秋分の日';
     } else if (month === 10) {
-      if (isNthMonday(2)) name = 'スポーツの日';
+      if (isNthMonday(2)) return 'スポーツの日';
     } else if (month === 11) {
-      if (day === 3) name = '文化の日';
-      else if (day === 23) name = '勤労感謝の日';
+      if (day === 3) return '文化の日';
+      if (day === 23) return '勤労感謝の日';
     }
 
-    if (name) return name;
+    return '';
+  }
 
-    // 振替休日判定（日曜日に祝日があった場合、翌月曜などが振替）
+  /* --- 日本の祝日・振替休日・国民の休日判定ロジック --- */
+  function getJapaneseHoliday(year, month, day) {
+    // 1. 本来の国民の祝日判定
+    const pureHoliday = getPureNationalHoliday(year, month, day);
+    if (pureHoliday) return pureHoliday;
+
+    const targetDate = new Date(year, month - 1, day);
+    const dayOfWeek = targetDate.getDay();
+
+    // 2. 振替休日判定（前日が祝日かつ日曜の場合など）
     if (dayOfWeek === 1) {
-      const prevDayHoliday = getJapaneseHoliday(year, month, day - 1);
-      if (prevDayHoliday && !prevDayHoliday.includes('振替')) return '振替休日';
+      const prevDate = new Date(year, month - 1, day - 1);
+      const prevHoliday = getPureNationalHoliday(prevDate.getFullYear(), prevDate.getMonth() + 1, prevDate.getDate());
+      if (prevHoliday) return '振替休日';
+    }
+
+    // 3. 国民の休日判定（祝日と祝日に挟まれた平日）
+    const prevDate = new Date(year, month - 1, day - 1);
+    const nextDate = new Date(year, month - 1, day + 1);
+
+    const prevHoliday = getPureNationalHoliday(prevDate.getFullYear(), prevDate.getMonth() + 1, prevDate.getDate());
+    const nextHoliday = getPureNationalHoliday(nextDate.getFullYear(), nextDate.getMonth() + 1, nextDate.getDate());
+
+    if (prevHoliday && nextHoliday) {
+      return '国民の休日';
     }
 
     return '';
@@ -613,7 +627,6 @@
       const dStr = day < 10 ? '0' + day : day;
       const dateStr = `${viewYear}-${mStr}-${dStr}`;
 
-      // 祝日名の取得
       const holidayName = getJapaneseHoliday(viewYear, viewMonth, day);
 
       const cell = document.createElement('div');
