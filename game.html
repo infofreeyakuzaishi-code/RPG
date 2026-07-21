@@ -217,7 +217,22 @@
     .calendar-cell .tag-inc { color: var(--income-color); font-size: 0.6rem; }
     .calendar-cell .tag-def { color: var(--defense-color); font-size: 0.6rem; font-weight: bold; }
 
+    /* 月間集計＆明細エリア */
     .detail-list { margin-top: 16px; background: white; border-radius: 8px; padding: 12px; }
+    
+    .monthly-summary-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .summary-item .sum-title { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
+    .summary-item .sum-val { font-size: 0.95rem; font-weight: bold; }
+
     .detail-item {
       display: flex;
       justify-content: space-between;
@@ -370,7 +385,23 @@
       <div class="calendar-grid" id="calendarGrid"></div>
 
       <div class="detail-list">
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;" id="selectedDateTitle">7月21日の明細</div>
+        <!-- 月間まとめ表示欄 -->
+        <div class="monthly-summary-box">
+          <div class="summary-item">
+            <div class="sum-title">今月の支出</div>
+            <div class="sum-val" id="sumExpense" style="color: var(--expense-color);">¥0</div>
+          </div>
+          <div class="summary-item">
+            <div class="sum-title">今月の収入</div>
+            <div class="sum-val" id="sumIncome" style="color: var(--income-color);">¥0</div>
+          </div>
+          <div class="summary-item">
+            <div class="sum-title">今月の我慢(防衛)</div>
+            <div class="sum-val" id="sumDefense" style="color: var(--defense-color);">¥0</div>
+          </div>
+        </div>
+
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;" id="selectedDateTitle">7月全体のまとめ</div>
         <div id="detailListContent"></div>
       </div>
     </div>
@@ -435,10 +466,12 @@
     { date: '2026-07-20', type: 'expense', category: '食材費（家）', amount: 2580, memo: 'スーパー買い出し' },
     { date: '2026-07-20', type: 'defense', category: '外食回避自炊', amount: 1200, kcal: 650, carb: 80, fat: 20, memo: '夜のカツ丼我慢して自炊' },
     { date: '2026-07-21', type: 'expense', category: '外食費', amount: 950, memo: 'ランチ' },
-    { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' }
+    { date: '2026-07-21', type: 'defense', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' },
+    { date: '2026-09-21', type: 'expense', category: '外食費', amount: 1500, memo: '敬老の日ランチ' },
+    { date: '2026-09-22', type: 'defense', category: 'ついで買い我慢', amount: 400, kcal: 200, memo: '国民の休日ドトールガマン' }
   ];
 
-  /* --- 単一日の「国民の祝日」名を取得する基本関数 --- */
+  /* --- 国民の祝日計算 --- */
   function getPureNationalHoliday(year, month, day) {
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay();
@@ -479,23 +512,19 @@
     return '';
   }
 
-  /* --- 日本の祝日・振替休日・国民の休日判定ロジック --- */
   function getJapaneseHoliday(year, month, day) {
-    // 1. 本来の国民の祝日判定
     const pureHoliday = getPureNationalHoliday(year, month, day);
     if (pureHoliday) return pureHoliday;
 
     const targetDate = new Date(year, month - 1, day);
     const dayOfWeek = targetDate.getDay();
 
-    // 2. 振替休日判定（前日が祝日かつ日曜の場合など）
     if (dayOfWeek === 1) {
       const prevDate = new Date(year, month - 1, day - 1);
       const prevHoliday = getPureNationalHoliday(prevDate.getFullYear(), prevDate.getMonth() + 1, prevDate.getDate());
       if (prevHoliday) return '振替休日';
     }
 
-    // 3. 国民の休日判定（祝日と祝日に挟まれた平日）
     const prevDate = new Date(year, month - 1, day - 1);
     const nextDate = new Date(year, month - 1, day + 1);
 
@@ -513,7 +542,6 @@
     document.getElementById('inputDate').value = '2026-07-21';
     updateCategoryDropdown();
     renderCalendar();
-    showDetail('2026-07-21');
     renderCategoryManageList();
   };
 
@@ -574,7 +602,7 @@
     viewMonth = d.getMonth() + 1;
     
     renderCalendar();
-    showDetail(date);
+    showDailyDetail(date);
     navTo('home', 'ホーム (ROGITAN)', document.querySelectorAll('.nav-item')[0]);
   }
 
@@ -635,7 +663,9 @@
       if (dayOfWeek === 6) cellCls += ' is-sat';
       if (holidayName) cellCls += ' is-holiday';
       cell.className = cellCls;
-      cell.onclick = () => showDetail(dateStr);
+      
+      // 日付タップでその日の明細を表示
+      cell.onclick = () => showDailyDetail(dateStr);
 
       let dayHtml = `<div class="day-num">${day}</div>`;
       if (holidayName) {
@@ -652,20 +682,61 @@
       cell.innerHTML = dayHtml;
       grid.appendChild(cell);
     }
+
+    // 月全体のサマリーと一覧の更新
+    updateMonthlySummary();
   }
 
-  function showDetail(dateStr) {
-    document.getElementById('selectedDateTitle').textContent = `${dateStr} の明細`;
+  /* --- 今月全体の集計と表示 --- */
+  function updateMonthlySummary() {
+    const mStr = viewMonth < 10 ? '0' + viewMonth : viewMonth;
+    const monthPrefix = `${viewYear}-${mStr}`;
+    
+    // 該当月のデータだけを抽出
+    const monthlyLogs = sampleLogs.filter(l => l.date.startsWith(monthPrefix));
+
+    let sumExp = 0, sumInc = 0, sumDef = 0;
+    monthlyLogs.forEach(l => {
+      if (l.type === 'expense') sumExp += l.amount;
+      if (l.type === 'income') sumInc += l.amount;
+      if (l.type === 'defense') sumDef += l.amount;
+    });
+
+    // 上部サマリーの数値を更新
+    document.getElementById('sumExpense').textContent = `¥${sumExp.toLocaleString()}`;
+    document.getElementById('sumIncome').textContent = `¥${sumInc.toLocaleString()}`;
+    document.getElementById('sumDefense').textContent = `¥${sumDef.toLocaleString()}`;
+
+    // 下部タイトルとリストを「月間全体」に更新
+    document.getElementById('selectedDateTitle').textContent = `${viewMonth}月全体の明細`;
+    renderLogList(monthlyLogs);
+  }
+
+  /* --- 特定の日付タップ時の明細表示 --- */
+  function showDailyDetail(dateStr) {
+    const dayLogs = sampleLogs.filter(l => l.date === dateStr);
+    const d = new Date(dateStr);
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+
+    document.getElementById('selectedDateTitle').textContent = `${month}月${day}日の明細`;
+    renderLogList(dayLogs);
+  }
+
+  /* --- 明細リストを描画する共通処理 --- */
+  function renderLogList(logs) {
     const container = document.getElementById('detailListContent');
     container.innerHTML = '';
 
-    const dayLogs = sampleLogs.filter(l => l.date === dateStr);
-    if (dayLogs.length === 0) {
-      container.innerHTML = '<div style="color:#999; font-size:0.85rem;">記録はありません</div>';
+    if (logs.length === 0) {
+      container.innerHTML = '<div style="color:#999; font-size:0.85rem; padding: 8px 0;">記録はありません</div>';
       return;
     }
 
-    dayLogs.forEach(l => {
+    // 日付順にソート（新しい順）
+    logs.sort((a, b) => b.date.localeCompare(a.date));
+
+    logs.forEach(l => {
       const item = document.createElement('div');
       item.className = 'detail-item';
       const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '我慢';
@@ -679,10 +750,11 @@
       item.innerHTML = `
         <div>
           <span style="font-weight:bold; color:${color}">[${typeLabel}] ${l.category}</span>
+          <span style="font-size:0.75rem; color:#999; margin-left:6px;">${l.date.substring(5)}</span>
           <div class="tag-sub">${subInfo}</div>
         </div>
         <div style="font-weight:bold; color:${color}">
-          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🛡 '}¥${l.amount}
+          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🛡 '}¥${l.amount.toLocaleString()}
         </div>
       `;
       container.appendChild(item);
