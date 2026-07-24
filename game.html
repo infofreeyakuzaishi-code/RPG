@@ -3,287 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>エコ家計簿 ＆ 育成デモ</title>
+  <title>エコ家計簿 ＆ 育成（図鑑・アイテム機能付き）</title>
   <style>
     :root {
       --primary-color: #4CAF50;
-      --expense-color: #f44336;
-      --income-color: #2196F3;
-      --saving-color: #FF9800; /* 旧 defense-color を saving-color に変更 */
-      --holiday-color: #e53935;
+      --saving-color: #FF9800;
       --bg-color: #f5f5f5;
       --card-bg: #ffffff;
+      --lock-color: #9e9e9e;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #e0e0e0; display: flex; justify-content: center; min-height: 100vh; }
     
     .app-container {
-      width: 100%;
-      max-width: 414px;
-      height: 100vh;
-      background-color: var(--bg-color);
-      display: flex;
-      flex-direction: column;
-      position: relative;
+      width: 100%; max-width: 414px; height: 100vh;
+      background-color: var(--bg-color); display: flex;
+      flex-direction: column; position: relative;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
 
     .app-header {
-      background-color: var(--card-bg);
-      padding: 12px 16px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 1.1rem;
-      border-bottom: 1px solid #ddd;
-      color: #333;
+      background-color: var(--card-bg); padding: 12px 16px;
+      text-align: center; font-weight: bold; font-size: 1.1rem;
+      border-bottom: 1px solid #ddd; color: #333;
     }
 
-    .content-area {
-      flex: 1;
-      overflow-y: auto;
-      padding-bottom: 70px;
-    }
-
+    .content-area { flex: 1; overflow-y: auto; padding-bottom: 70px; }
     .page { display: none; padding: 16px; }
     .page.active { display: block; }
 
-    /* --- メインキャラクターカード --- */
+    /* メインキャラカード */
     .partner-card {
       background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 16px;
     }
-    .partner-avatar {
-      font-size: 4rem;
-      margin: 10px 0;
-      animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
+    .partner-avatar { font-size: 4rem; margin: 8px 0; transition: transform 0.2s; }
+    .partner-avatar.bounce { transform: scale(1.2); }
     .partner-speech {
-      background: white;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 0.85rem;
-      color: #333;
-      margin-bottom: 12px;
-      position: relative;
-      display: inline-block;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .partner-speech::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 8px 8px 0;
-      border-style: solid;
-      border-color: white transparent;
-    }
-    .level-bar-bg {
-      background: rgba(255,255,255,0.6);
-      height: 10px;
-      border-radius: 5px;
-      overflow: hidden;
-      margin-top: 6px;
-    }
-    .level-bar-fill {
-      background: var(--primary-color);
-      height: 100%;
-      width: 65%;
+      background: white; border-radius: 12px; padding: 10px 14px;
+      font-size: 0.85rem; color: #333; margin-bottom: 12px; display: inline-block;
     }
 
-    /* --- タブ＆フォーム --- */
-    .type-tabs {
-      display: flex;
-      background: #e0e0e0;
-      border-radius: 8px;
-      padding: 4px;
-      margin-bottom: 16px;
+    /* --- 図鑑（キャラクターアンロック）画面 --- */
+    .collection-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;
     }
-    .type-tab {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #666;
+    .char-card {
+      background: white; border-radius: 12px; padding: 16px; text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05); position: relative; border: 2px solid transparent;
     }
-    .type-tab.active[data-type="expense"] { background: var(--expense-color); color: white; }
-    .type-tab.active[data-type="income"] { background: var(--income-color); color: white; }
-    .type-tab.active[data-type="saving"] { background: var(--saving-color); color: white; }
-
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
-    .form-control {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      background: var(--card-bg);
-    }
-    .amount-input { font-size: 1.4rem; font-weight: bold; text-align: right; }
-
-    .saving-fields {
-      background: #fff8e1;
-      border: 1px solid #ffe082;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 14px;
-      display: none;
-    }
-    .saving-fields.active { display: block; }
-    .nutrition-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-
-    .btn-submit {
-      width: 100%;
-      padding: 14px;
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
+    .char-card.unlocked { border-color: var(--primary-color); }
+    .char-card.locked { background: #eee; color: var(--lock-color); }
+    .char-icon { font-size: 2.5rem; margin-bottom: 6px; }
+    .char-card.locked .char-icon { filter: grayscale(100%) opacity(0.4); }
+    .char-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; }
+    .char-status { font-size: 0.7rem; color: #666; }
+    .lock-badge {
+      position: absolute; top: 8px; right: 8px; background: #757575;
+      color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;
     }
 
-    /* --- カレンダー --- */
-    .month-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 8px;
+    /* --- アイテム画面 --- */
+    .item-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px;
     }
-    .month-nav-btn {
-      background: #eee;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.9rem;
+    .item-card {
+      background: white; border-radius: 10px; padding: 12px 8px; text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #eee;
     }
-    .month-nav-btn:hover { background: #ddd; }
-    
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-      background: #ccc;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .calendar-day-head {
-      background: #eee;
-      text-align: center;
-      padding: 6px 0;
-      font-size: 0.75rem;
-      font-weight: bold;
-    }
-    .calendar-day-head.sun { color: var(--holiday-color); }
-    .calendar-day-head.sat { color: var(--income-color); }
+    .item-card:hover { border-color: var(--saving-color); }
+    .item-icon { font-size: 2rem; margin-bottom: 4px; }
+    .item-name { font-size: 0.75rem; font-weight: bold; color: #333; }
+    .item-count { font-size: 0.7rem; color: var(--saving-color); font-weight: bold; margin-top: 2px; }
 
-    .calendar-cell {
-      background: white;
-      min-height: 54px;
-      padding: 2px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-    }
-    .calendar-cell.other-month { background: #fafafa; color: #ccc; cursor: default; }
-    .calendar-cell .day-num { font-weight: bold; margin-bottom: 2px; }
-    .calendar-cell.is-sun .day-num,
-    .calendar-cell.is-holiday .day-num { color: var(--holiday-color); }
-    .calendar-cell.is-sat .day-num { color: var(--income-color); }
-    .holiday-label { font-size: 0.55rem; color: var(--holiday-color); font-weight: bold; line-height: 1; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .calendar-cell .tag-exp { color: var(--expense-color); font-size: 0.6rem; }
-    .calendar-cell .tag-inc { color: var(--income-color); font-size: 0.6rem; }
-    .calendar-cell .tag-sav { color: var(--saving-color); font-size: 0.6rem; font-weight: bold; }
-
-    /* 月間集計＆明細エリア */
-    .detail-list { margin-top: 16px; background: white; border-radius: 8px; padding: 12px; }
-    
-    .monthly-summary-box {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-    .summary-item .sum-title { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
-    .summary-item .sum-val { font-size: 0.95rem; font-weight: bold; }
-
-    .detail-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      font-size: 0.85rem;
-    }
-    .detail-item:last-child { border-bottom: none; }
-    .tag-sub { font-size: 0.75rem; color: #888; margin-top: 2px; }
-
-    /* --- カテゴリー設定 --- */
-    .cat-manage-list { margin-top: 10px; background: white; border-radius: 8px; }
-    .cat-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      border-bottom: 1px solid #eee;
-    }
-    .cat-item:last-child { border-bottom: none; }
-    .cat-actions button {
-      padding: 4px 8px;
-      font-size: 0.75rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 4px;
-    }
-    .btn-edit { background: #ffc107; color: #333; }
-    .btn-delete { background: #f44336; color: white; }
-    .add-cat-box { display: flex; gap: 8px; margin-top: 12px; }
-
-    /* --- 下部ナビゲーション --- */
+    /* 下部ナビゲーション */
     .bottom-nav {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 60px;
-      background: var(--card-bg);
-      border-top: 1px solid #ddd;
-      display: flex;
+      position: absolute; bottom: 0; width: 100%; height: 60px;
+      background: var(--card-bg); border-top: 1px solid #ddd; display: flex;
     }
     .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      color: #888;
-      cursor: pointer;
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; font-size: 0.65rem; color: #888; cursor: pointer;
     }
     .nav-item.active { color: var(--primary-color); font-weight: bold; }
     .nav-icon { font-size: 1.1rem; margin-bottom: 2px; }
@@ -295,134 +96,98 @@
   <div class="app-header" id="pageTitle">ホーム</div>
 
   <div class="content-area">
-
+    
     <!-- 1. ホーム -->
     <div id="page-home" class="page active">
       <div class="partner-card">
-        <div class="partner-speech" id="partnerTalk">「今日も間食をグッとこらえて、節約成功を目指そう！」</div>
-        <!-- 暫定アイコン（フクロウ・豚・蛇・カエルなどの仮枠） -->
+        <div class="partner-speech" id="partnerTalk">「アイテム画面でおやつをくれるの？楽しみに待ってるよ！」</div>
         <div class="partner-avatar" id="partnerAvatar">🦉</div>
-        <div style="font-weight: bold; color: #2e7d32;" id="partnerName">Lv. 4 知恵のフクロウ</div>
-        <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">次のレベルまで あと 350 kcal / ¥1,800</div>
-        <div class="level-bar-bg">
-          <div class="level-bar-fill"></div>
-        </div>
+        <div style="font-weight: bold; color: #2e7d32;">1ヶ月目：知恵のフクロウ</div>
+        <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">なつき度: LV. 2 (EXP 120/300)</div>
       </div>
-
-      <div style="background: white; border-radius: 12px; padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-around; text-align: center;">
-        <div>
-          <div style="font-size: 0.75rem; color: #666;">今月の節約金額</div>
-          <div style="font-size: 1.1rem; font-weight: bold; color: var(--saving-color);">¥4,200</div>
-        </div>
-        <div style="border-left: 1px solid #eee;"></div>
-        <div>
-          <div style="font-size: 0.75rem; color: #666;">節約カロリー</div>
-          <div style="font-size: 1.1rem; font-weight: bold; color: #d84315;">970 kcal</div>
-        </div>
-      </div>
-
-      <button class="btn-submit" onclick="navTo('input', '簡単入力', document.querySelectorAll('.nav-item')[1])" style="background: var(--saving-color);">🌱 節約（我慢）を記録する</button>
-    </div>
-
-    <!-- 2. 入力ページ -->
-    <div id="page-input" class="page">
-      <div class="type-tabs">
-        <div class="type-tab active" data-type="expense" onclick="switchType('expense')">支出</div>
-        <div class="type-tab" data-type="income" onclick="switchType('income')">収入</div>
-        <div class="type-tab" data-type="saving" onclick="switchType('saving')">節約</div>
-      </div>
-
-      <form id="logForm" onsubmit="saveLog(event)">
-        <div class="form-group">
-          <label>金額 (円)</label>
-          <input type="number" id="inputAmount" class="form-control amount-input" placeholder="0" required>
-        </div>
-
-        <div class="form-group">
-          <label>カテゴリー</label>
-          <select id="inputCategory" class="form-control"></select>
-        </div>
-
-        <div id="savingFields" class="saving-fields">
-          <div style="font-size: 0.85rem; font-weight: bold; color: #d84315; margin-bottom: 8px;">🌱 節約・我慢した内容（任意）</div>
-          <div class="nutrition-grid">
-            <div>
-              <label style="font-size:0.75rem; color:#666;">カロリー(kcal)</label>
-              <input type="number" id="inputKcal" class="form-control" placeholder="350">
-            </div>
-            <div>
-              <label style="font-size:0.75rem; color:#666;">糖質(g)</label>
-              <input type="number" id="inputCarb" class="form-control" placeholder="45">
-            </div>
-            <div>
-              <label style="font-size:0.75rem; color:#666;">脂質(g)</label>
-              <input type="number" id="inputFat" class="form-control" placeholder="15">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>日付</label>
-          <input type="date" id="inputDate" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-          <label>メモ (任意)</label>
-          <input type="text" id="inputMemo" class="form-control" placeholder="例: コンビニのスイーツを我慢">
-        </div>
-
-        <button type="submit" class="btn-submit">記録する</button>
-      </form>
-    </div>
-
-    <!-- 3. カレンダーページ -->
-    <div id="page-calendar" class="page">
-      <div class="month-header">
-        <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 前月</button>
-        <span id="currentMonthTitle" style="font-size: 1.05rem; font-weight: bold;">2026年 7月</span>
-        <button class="month-nav-btn" onclick="changeMonth(1)">次月 ▶</button>
-      </div>
-      
-      <div class="calendar-grid" id="calendarGrid"></div>
-
-      <div class="detail-list">
-        <!-- 月間まとめ表示欄 -->
-        <div class="monthly-summary-box">
-          <div class="summary-item">
-            <div class="sum-title">今月の支出</div>
-            <div class="sum-val" id="sumExpense" style="color: var(--expense-color);">¥0</div>
-          </div>
-          <div class="summary-item">
-            <div class="sum-title">今月の収入</div>
-            <div class="sum-val" id="sumIncome" style="color: var(--income-color);">¥0</div>
-          </div>
-          <div class="summary-item">
-            <div class="sum-title">今月の節約</div>
-            <div class="sum-val" id="sumSaving" style="color: var(--saving-color);">¥0</div>
-          </div>
-        </div>
-
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;" id="selectedDateTitle">7月全体の明細</div>
-        <div id="detailListContent"></div>
+      <div style="background: white; border-radius: 12px; padding: 14px; text-align: center; font-size: 0.85rem; color: #555;">
+        🌱 節約を記録して新しいアイテムをGETしよう！
       </div>
     </div>
 
-    <!-- 4. 設定ページ -->
-    <div id="page-settings" class="page">
-      <h3 style="font-size: 1rem; margin-bottom: 12px;">カテゴリーの編集・管理</h3>
-      
-      <div class="type-tabs">
-        <div class="type-tab active" data-type="expense" onclick="switchSettingType('expense')">支出用</div>
-        <div class="type-tab" data-type="income" onclick="switchSettingType('income')">収入用</div>
-        <div class="type-tab" data-type="saving" onclick="switchSettingType('saving')">節約用</div>
+    <!-- 2. 図鑑（アンロック）画面 -->
+    <div id="page-book" class="page">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 8px;">
+        毎月1ヶ月達成するごとに新しい仲間がアンロックされます！
       </div>
 
-      <div class="add-cat-box">
-        <input type="text" id="newCatName" class="form-control" placeholder="新しいカテゴリー名">
-        <button onclick="addCategory()" style="padding: 0 16px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: bold;">追加</button>
+      <div class="collection-grid">
+        <!-- フクロウ（初期/1ヶ月目） -->
+        <div class="char-card unlocked" onclick="showCharDetail('フクロウ', '1ヶ月目の相棒。節約の基礎と知恵を教えてくれた。', '¥12,400', '2,400 kcal')">
+          <div class="char-icon">🦉</div>
+          <div class="char-name">知恵のフクロウ</div>
+          <div class="char-status" style="color: var(--primary-color); font-weight: bold;">1ヶ月目（解放済み）</div>
+        </div>
+
+        <!-- 豚（2ヶ月目） -->
+        <div class="char-card locked">
+          <div class="lock-badge">🔒 2ヶ月目</div>
+          <div class="char-icon">🐷</div>
+          <div class="char-name">蓄財のトントン</div>
+          <div class="char-status">2ヶ月目スタートで解放</div>
+        </div>
+
+        <!-- 蛇（3ヶ月目） -->
+        <div class="char-card locked">
+          <div class="lock-badge">🔒 3ヶ月目</div>
+          <div class="char-icon">🐍</div>
+          <div class="char-name">スリムヘビ</div>
+          <div class="char-status">3ヶ月目スタートで解放</div>
+        </div>
+
+        <!-- カエル（4ヶ月目） -->
+        <div class="char-card locked">
+          <div class="lock-badge">🔒 4ヶ月目</div>
+          <div class="char-icon">🐸</div>
+          <div class="char-name">原点カエル</div>
+          <div class="char-status">4ヶ月目スタートで解放</div>
+        </div>
       </div>
 
-      <div class="cat-manage-list" id="catManageList"></div>
+      <div style="margin-top: 16px; background: #fff8e1; border-radius: 10px; padding: 12px; font-size: 0.8rem; color: #f57f17; line-height: 1.4;">
+        👑 **5ヶ月目以降**<br>
+        4人全員が揃うと、色や属性がランダム生成される「本編（ランダム育成）」が解放されます！
+      </div>
+    </div>
+
+    <!-- 3. アイテム画面 -->
+    <div id="page-items" class="page">
+      <div style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">
+        所持しているアイテムをあげて相棒を喜ばせよう！
+      </div>
+
+      <div class="item-grid">
+        <div class="item-card" onclick="useItem('高級リンゴ', '🦉「甘くておいしい！EXP+50」')">
+          <div class="item-icon">🍎</div>
+          <div class="item-name">高級リンゴ</div>
+          <div class="item-count">所持: 3個</div>
+        </div>
+
+        <div class="item-card" onclick="useItem('極上ハーブティー', '🦉「心が落ち着くよ〜♪ EXP+30」')">
+          <div class="item-icon">🍵</div>
+          <div class="item-name">ハーブティー</div>
+          <div class="item-count">所持: 5個</div>
+        </div>
+
+        <div class="item-card" onclick="useItem('キラキラどんぐり', '🦉「これ欲しかったんだ！ EXP+100」')">
+          <div class="item-icon">🌰</div>
+          <div class="item-name">金のどんぐり</div>
+          <div class="item-count">所持: 1個</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; background: white; border-radius: 12px; padding: 14px;">
+        <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 6px;">🎁 アイテムの入手方法</div>
+        <div style="font-size: 0.75rem; color: #666; line-height: 1.5;">
+          ・「節約・我慢」を記録したとき確率でドロップ<br>
+          ・月間の目標節約額を達成したときのごほうび
+        </div>
+      </div>
     </div>
 
   </div>
@@ -433,139 +198,18 @@
       <div class="nav-icon">🏡</div>
       <div>ホーム</div>
     </div>
-    <div class="nav-item" onclick="navTo('input', '簡単入力', this)">
-      <div class="nav-icon">✏️</div>
-      <div>入力</div>
+    <div class="nav-item" onclick="navTo('book', 'キャラクター図鑑', this)">
+      <div class="nav-icon">📖</div>
+      <div>図鑑</div>
     </div>
-    <div class="nav-item" onclick="navTo('calendar', '収支カレンダー', this)">
-      <div class="nav-icon">📅</div>
-      <div>カレンダー</div>
-    </div>
-    <div class="nav-item" onclick="navTo('settings', '設定（カテゴリー管理）', this)">
-      <div class="nav-icon">⚙️</div>
-      <div>設定</div>
+    <div class="nav-item" onclick="navTo('items', 'アイテムもちもの', this)">
+      <div class="nav-icon">🎁</div>
+      <div>アイテム</div>
     </div>
   </div>
 </div>
 
 <script>
-  let currentType = 'expense';
-  let settingType = 'expense';
-
-  let viewYear = 2026;
-  let viewMonth = 7;
-
-  let categories = {
-    expense: ['食材費（家）', '外食費', '日用品', '交通費', '娯楽'],
-    income: ['給与', '副収入', '臨時収入'],
-    saving: ['ついで買い我慢', '外食回避自炊', 'スイーツ我慢', 'サブスク解約']
-  };
-
-  const sampleLogs = [
-    { date: '2026-05-03', type: 'expense', category: '娯楽', amount: 3200, memo: 'GWおでかけ' },
-    { date: '2026-06-15', type: 'saving', category: 'ついで買い我慢', amount: 500, kcal: 250, memo: '先月の節約テスト' },
-    { date: '2026-07-20', type: 'expense', category: '食材費（家）', amount: 2580, memo: 'スーパー買い出し' },
-    { date: '2026-07-20', type: 'saving', category: '外食回避自炊', amount: 1200, kcal: 650, carb: 80, fat: 20, memo: '夜のカツ丼我慢して自炊' },
-    { date: '2026-07-21', type: 'expense', category: '外食費', amount: 950, memo: 'ランチ' },
-    { date: '2026-07-21', type: 'saving', category: 'スイーツ我慢', amount: 300, kcal: 320, carb: 40, fat: 12, memo: 'コンビニケーキ我慢' },
-    { date: '2026-09-21', type: 'expense', category: '外食費', amount: 1500, memo: '敬老の日ランチ' },
-    { date: '2026-09-22', type: 'saving', category: 'ついで買い我慢', amount: 400, kcal: 200, memo: '国民の休日カフェ我慢' }
-  ];
-
-  /* --- 国民の祝日計算 --- */
-  function getPureNationalHoliday(year, month, day) {
-    const dateObj = new Date(year, month - 1, day);
-    const dayOfWeek = dateObj.getDay();
-
-    const vernalEquinox = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
-    const autumnalEquinox = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
-
-    const isNthMonday = (n) => dayOfWeek === 1 && Math.ceil(day / 7) === n;
-
-    if (month === 1) {
-      if (day === 1) return '元日';
-      if (isNthMonday(2)) return '成人の日';
-    } else if (month === 2) {
-      if (day === 11) return '建国記念の日';
-      if (day === 23) return '天皇誕生日';
-    } else if (month === 3) {
-      if (day === vernalEquinox) return '春分の日';
-    } else if (month === 4) {
-      if (day === 29) return '昭和の日';
-    } else if (month === 5) {
-      if (day === 3) return '憲法記念日';
-      if (day === 4) return 'みどりの日';
-      if (day === 5) return 'こどもの日';
-    } else if (month === 7) {
-      if (isNthMonday(3)) return '海の日';
-    } else if (month === 8) {
-      if (day === 11) return '山の日';
-    } else if (month === 9) {
-      if (isNthMonday(3)) return '敬老の日';
-      if (day === autumnalEquinox) return '秋分の日';
-    } else if (month === 10) {
-      if (isNthMonday(2)) return 'スポーツの日';
-    } else if (month === 11) {
-      if (day === 3) return '文化の日';
-      if (day === 23) return '勤労感謝の日';
-    }
-
-    return '';
-  }
-
-  function getJapaneseHoliday(year, month, day) {
-    const pureHoliday = getPureNationalHoliday(year, month, day);
-    if (pureHoliday) return pureHoliday;
-
-    const targetDate = new Date(year, month - 1, day);
-    const dayOfWeek = targetDate.getDay();
-
-    if (dayOfWeek === 1) {
-      const prevDate = new Date(year, month - 1, day - 1);
-      const prevHoliday = getPureNationalHoliday(prevDate.getFullYear(), prevDate.getMonth() + 1, prevDate.getDate());
-      if (prevHoliday) return '振替休日';
-    }
-
-    const prevDate = new Date(year, month - 1, day - 1);
-    const nextDate = new Date(year, month - 1, day + 1);
-
-    const prevHoliday = getPureNationalHoliday(prevDate.getFullYear(), prevDate.getMonth() + 1, prevDate.getDate());
-    const nextHoliday = getPureNationalHoliday(nextDate.getFullYear(), nextDate.getMonth() + 1, nextDate.getDate());
-
-    if (prevHoliday && nextHoliday) {
-      return '国民の休日';
-    }
-
-    return '';
-  }
-
-  window.onload = () => {
-    document.getElementById('inputDate').value = '2026-07-21';
-    updateCategoryDropdown();
-    renderCalendar();
-    renderCategoryManageList();
-  };
-
-  function switchType(type) {
-    currentType = type;
-    document.querySelectorAll('#page-input .type-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.type === type);
-    });
-    document.getElementById('savingFields').classList.toggle('active', type === 'saving');
-    updateCategoryDropdown();
-  }
-
-  function updateCategoryDropdown() {
-    const select = document.getElementById('inputCategory');
-    select.innerHTML = '';
-    categories[currentType].forEach(cat => {
-      const opt = document.createElement('option');
-      opt.value = cat;
-      opt.textContent = cat;
-      select.appendChild(opt);
-    });
-  }
-
   function navTo(pageId, title, element) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(`page-${pageId}`).classList.add('active');
@@ -575,235 +219,20 @@
     element.classList.add('active');
   }
 
-  function saveLog(e) {
-    e.preventDefault();
-    const amount = document.getElementById('inputAmount').value;
-    const category = document.getElementById('inputCategory').value;
-    const date = document.getElementById('inputDate').value;
-    const memo = document.getElementById('inputMemo').value;
+  function showCharDetail(name, desc, money, kcal) {
+    alert(`【${name}の思い出】\n\n${desc}\n\n🎉 達成記録:\n・節約金額: ${money}\n・削減カロリー: ${kcal}`);
+  }
 
-    const logData = { date, type: currentType, category, amount: Number(amount), memo };
-
-    if (currentType === 'saving') {
-      logData.kcal = document.getElementById('inputKcal').value || 0;
-      logData.carb = document.getElementById('inputCarb').value || 0;
-      logData.fat = document.getElementById('inputFat').value || 0;
-
-      document.getElementById('partnerTalk').textContent = `「素晴らしい！${logData.kcal}kcalの節約に成功したよ！」`;
-    }
-
-    sampleLogs.push(logData);
-    alert(`記録しました！`);
+  function useItem(itemName, talkText) {
+    alert(`「${itemName}」をフクロウにあげました！`);
     
-    document.getElementById('inputAmount').value = '';
-    document.getElementById('inputMemo').value = '';
-
-    const d = new Date(date);
-    viewYear = d.getFullYear();
-    viewMonth = d.getMonth() + 1;
-    
-    renderCalendar();
-    showDailyDetail(date);
+    // ホーム画面に切り替えてアニメーションとセリフ更新
     navTo('home', 'ホーム', document.querySelectorAll('.nav-item')[0]);
-  }
-
-  function changeMonth(diff) {
-    viewMonth += diff;
-    if (viewMonth < 1) {
-      viewMonth = 12;
-      viewYear--;
-    } else if (viewMonth > 12) {
-      viewMonth = 1;
-      viewYear++;
-    }
-    renderCalendar();
-  }
-
-  function renderCalendar() {
-    document.getElementById('currentMonthTitle').textContent = `${viewYear}年 ${viewMonth}月`;
-
-    const grid = document.getElementById('calendarGrid');
-    grid.innerHTML = '';
-
-    const days = [
-      { name: '日', cls: 'sun' }, { name: '月', cls: '' }, { name: '火', cls: '' },
-      { name: '水', cls: '' }, { name: '木', cls: '' }, { name: '金', cls: '' }, { name: '土', cls: 'sat' }
-    ];
-    days.forEach(d => {
-      const head = document.createElement('div');
-      head.className = `calendar-day-head ${d.cls}`;
-      head.textContent = d.name;
-      grid.appendChild(head);
-    });
-
-    const firstDay = new Date(viewYear, viewMonth - 1, 1);
-    const lastDay = new Date(viewYear, viewMonth, 0);
-    const startDayOfWeek = firstDay.getDay();
-    const totalDays = lastDay.getDate();
-
-    const prevMonthLastDay = new Date(viewYear, viewMonth - 1, 0).getDate();
-    for (let p = startDayOfWeek - 1; p >= 0; p--) {
-      const cell = document.createElement('div');
-      cell.className = 'calendar-cell other-month';
-      cell.innerHTML = `<div class="day-num">${prevMonthLastDay - p}</div>`;
-      grid.appendChild(cell);
-    }
-
-    for (let day = 1; day <= totalDays; day++) {
-      const dateObj = new Date(viewYear, viewMonth - 1, day);
-      const dayOfWeek = dateObj.getDay();
-      const mStr = viewMonth < 10 ? '0' + viewMonth : viewMonth;
-      const dStr = day < 10 ? '0' + day : day;
-      const dateStr = `${viewYear}-${mStr}-${dStr}`;
-
-      const holidayName = getJapaneseHoliday(viewYear, viewMonth, day);
-
-      const cell = document.createElement('div');
-      let cellCls = 'calendar-cell';
-      if (dayOfWeek === 0) cellCls += ' is-sun';
-      if (dayOfWeek === 6) cellCls += ' is-sat';
-      if (holidayName) cellCls += ' is-holiday';
-      cell.className = cellCls;
-      
-      cell.onclick = () => showDailyDetail(dateStr);
-
-      let dayHtml = `<div class="day-num">${day}</div>`;
-      if (holidayName) {
-        dayHtml += `<div class="holiday-label" title="${holidayName}">${holidayName}</div>`;
-      }
-
-      const dayLogs = sampleLogs.filter(l => l.date === dateStr);
-      dayLogs.forEach(l => {
-        if(l.type === 'expense') dayHtml += `<div class="tag-exp">-¥${l.amount}</div>`;
-        if(l.type === 'income') dayHtml += `<div class="tag-inc">+¥${l.amount}</div>`;
-        if(l.type === 'saving') dayHtml += `<div class="tag-sav">🌱¥${l.amount}</div>`;
-      });
-
-      cell.innerHTML = dayHtml;
-      grid.appendChild(cell);
-    }
-
-    updateMonthlySummary();
-  }
-
-  function updateMonthlySummary() {
-    const mStr = viewMonth < 10 ? '0' + viewMonth : viewMonth;
-    const monthPrefix = `${viewYear}-${mStr}`;
+    document.getElementById('partnerTalk').textContent = talkText;
     
-    const monthlyLogs = sampleLogs.filter(l => l.date.startsWith(monthPrefix));
-
-    let sumExp = 0, sumInc = 0, sumSav = 0;
-    monthlyLogs.forEach(l => {
-      if (l.type === 'expense') sumExp += l.amount;
-      if (l.type === 'income') sumInc += l.amount;
-      if (l.type === 'saving') sumSav += l.amount;
-    });
-
-    document.getElementById('sumExpense').textContent = `¥${sumExp.toLocaleString()}`;
-    document.getElementById('sumIncome').textContent = `¥${sumInc.toLocaleString()}`;
-    document.getElementById('sumSaving').textContent = `¥${sumSav.toLocaleString()}`;
-
-    document.getElementById('selectedDateTitle').textContent = `${viewMonth}月全体の明細`;
-    renderLogList(monthlyLogs);
-  }
-
-  function showDailyDetail(dateStr) {
-    const dayLogs = sampleLogs.filter(l => l.date === dateStr);
-    const d = new Date(dateStr);
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-
-    document.getElementById('selectedDateTitle').textContent = `${month}月${day}日の明細`;
-    renderLogList(dayLogs);
-  }
-
-  function renderLogList(logs) {
-    const container = document.getElementById('detailListContent');
-    container.innerHTML = '';
-
-    if (logs.length === 0) {
-      container.innerHTML = '<div style="color:#999; font-size:0.85rem; padding: 8px 0;">記録はありません</div>';
-      return;
-    }
-
-    logs.sort((a, b) => b.date.localeCompare(a.date));
-
-    logs.forEach(l => {
-      const item = document.createElement('div');
-      item.className = 'detail-item';
-      const typeLabel = l.type === 'expense' ? '支出' : l.type === 'income' ? '収入' : '節約';
-      const color = l.type === 'expense' ? 'var(--expense-color)' : l.type === 'income' ? 'var(--income-color)' : 'var(--saving-color)';
-      
-      let subInfo = l.memo || '';
-      if (l.type === 'saving' && (l.kcal > 0 || l.carb > 0 || l.fat > 0)) {
-        subInfo += ` (${l.kcal || 0}kcal / 糖質:${l.carb || 0}g / 脂質:${l.fat || 0}g)`;
-      }
-
-      item.innerHTML = `
-        <div>
-          <span style="font-weight:bold; color:${color}">[${typeLabel}] ${l.category}</span>
-          <span style="font-size:0.75rem; color:#999; margin-left:6px;">${l.date.substring(5)}</span>
-          <div class="tag-sub">${subInfo}</div>
-        </div>
-        <div style="font-weight:bold; color:${color}">
-          ${l.type === 'expense' ? '-' : l.type === 'income' ? '+' : '🌱 '}¥${l.amount.toLocaleString()}
-        </div>
-      `;
-      container.appendChild(item);
-    });
-  }
-
-  function switchSettingType(type) {
-    settingType = type;
-    document.querySelectorAll('#page-settings .type-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.type === type);
-    });
-    renderCategoryManageList();
-  }
-
-  function renderCategoryManageList() {
-    const list = document.getElementById('catManageList');
-    list.innerHTML = '';
-    categories[settingType].forEach((cat, index) => {
-      const item = document.createElement('div');
-      item.className = 'cat-item';
-      item.innerHTML = `
-        <span style="font-weight:bold;">${cat}</span>
-        <div class="cat-actions">
-          <button class="btn-edit" onclick="editCategory(${index})">編集</button>
-          <button class="btn-delete" onclick="deleteCategory(${index})">削除</button>
-        </div>
-      `;
-      list.appendChild(item);
-    });
-  }
-
-  function addCategory() {
-    const input = document.getElementById('newCatName');
-    const val = input.value.trim();
-    if (!val) return;
-    categories[settingType].push(val);
-    input.value = '';
-    renderCategoryManageList();
-    updateCategoryDropdown();
-  }
-
-  function editCategory(index) {
-    const oldName = categories[settingType][index];
-    const newName = prompt('新しいカテゴリー名を入力してください:', oldName);
-    if (newName && newName.trim() !== '') {
-      categories[settingType][index] = newName.trim();
-      renderCategoryManageList();
-      updateCategoryDropdown();
-    }
-  }
-
-  function deleteCategory(index) {
-    if (confirm(`「${categories[settingType][index]}」を削除しますか？`)) {
-      categories[settingType].splice(index, 1);
-      renderCategoryManageList();
-      updateCategoryDropdown();
-    }
+    const avatar = document.getElementById('partnerAvatar');
+    avatar.classList.add('bounce');
+    setTimeout(() => avatar.classList.remove('bounce'), 500);
   }
 </script>
 
